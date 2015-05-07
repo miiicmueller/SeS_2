@@ -1,0 +1,46 @@
+% Chapter Template
+
+\chapter{Question 2} % Main chapter title
+
+\label{Question 2} % Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
+
+\lhead{ \emph{EXT 4}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
+
+%----------------------------------------------------------------------------------------
+%	SECTION 1
+%----------------------------------------------------------------------------------------
+\section{Mount manually the usrfs partition}
+
+Voilà la commande de montage avec les paramètres par défauts :
+
+\begin{lstlisting}[frame=single,style=Console]  % Start your code-block
+
+# mkdir /mnt/usr
+# mount  -o rw,suid,dev,exec,async /dev/mmcblk0p3 /mnt/usr/
+# mount
+	...
+	/dev/mmcblk0p3 on /mnt/usr type ext4 (rw,relatime,data=ordered)
+\end{lstlisting}
+
+On voit que notre système à bien monté la partition au bon endroit.
+
+\section{Modify /etc/fstab }
+
+Voilà la version avec le montage automatique du "usrfs" :
+
+\begin{lstlisting}[frame=single,style=Console]  % Start your code-block
+
+# cat /etc/fstab 
+# /etc/fstab: static file system information.
+#
+# <file system> <mount pt>     <type>	<options>         <dump> <pass>
+/dev/root       /              ext2	rw,noauto         0      1
+/dev/mmcblk0p3	/mnt/usr       ext4     defaults	  0      1
+proc		/proc	       proc     defaults	  0	 0
+devpts		/dev/pts       devpts   defaults,gid=5,mode=620	  0	 0
+tmpfs           /dev/shm       tmpfs    mode=0777         0      0
+tmpfs           /tmp           tmpfs    mode=1777         0      0
+sysfs		/sys	       sysfs    defaults	  0	 0
+\end{lstlisting}
+
+

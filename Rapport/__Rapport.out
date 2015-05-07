@@ -1,28 +1,11 @@
 \BOOKMARK [0][-]{chapter.1}{Introduction}{}% 1
-\BOOKMARK [0][-]{chapter.2}{Bootloader U-Boot}{}% 2
-\BOOKMARK [1][-]{section.2.1}{MMC partitionning}{chapter.2}% 3
-\BOOKMARK [2][-]{subsection.2.1.1}{Automated MMC partitionning}{section.2.1}% 4
-\BOOKMARK [2][-]{subsection.2.1.2}{MMC File positionning}{section.2.1}% 5
-\BOOKMARK [2][-]{subsection.2.1.3}{U-Boot "bootcmds"}{section.2.1}% 6
-\BOOKMARK [1][-]{section.2.2}{U-Boot hardening}{chapter.2}% 7
-\BOOKMARK [2][-]{subsection.2.2.1}{GCC compilation command line}{section.2.2}% 8
-\BOOKMARK [0][-]{chapter.3}{Secure Kernel Configuration}{}% 9
-\BOOKMARK [1][-]{section.3.1}{Linux kernel configuration}{chapter.3}% 10
-\BOOKMARK [2][-]{subsection.3.1.1}{True Random Number Generator}{section.3.1}% 11
-\BOOKMARK [2][-]{subsection.3.1.2}{TCP SYN Cookies}{section.3.1}% 12
-\BOOKMARK [2][-]{subsection.3.1.3}{VA space randomization}{section.3.1}% 13
-\BOOKMARK [2][-]{subsection.3.1.4}{Linux kernel Read-Only}{section.3.1}% 14
-\BOOKMARK [2][-]{subsection.3.1.5}{/dev/mem access restrictions}{section.3.1}% 15
-\BOOKMARK [2][-]{subsection.3.1.6}{Debug symbols stripping}{section.3.1}% 16
-\BOOKMARK [2][-]{subsection.3.1.7}{Stack protection}{section.3.1}% 17
-\BOOKMARK [2][-]{subsection.3.1.8}{Restrict unprivileged access to kernel \(dmesg\)}{section.3.1}% 18
-\BOOKMARK [2][-]{subsection.3.1.9}{SELinux}{section.3.1}% 19
-\BOOKMARK [2][-]{subsection.3.1.10}{Disable IPv6 support}{section.3.1}% 20
-\BOOKMARK [1][-]{section.3.2}{TCP SYN cookies attack}{chapter.3}% 21
-\BOOKMARK [2][-]{subsection.3.2.1}{Scapy script}{section.3.2}% 22
-\BOOKMARK [2][-]{subsection.3.2.2}{Command "hping3"}{section.3.2}% 23
-\BOOKMARK [0][-]{chapter.4}{Valgrind}{}% 24
-\BOOKMARK [1][-]{section.4.1}{Runtime memory analysis and vulnerability detection}{chapter.4}% 25
-\BOOKMARK [2][-]{subsection.4.1.1}{Code 1 : bitmap.c}{section.4.1}% 26
-\BOOKMARK [2][-]{subsection.4.1.2}{Code 2 : exe2.c}{section.4.1}% 27
-\BOOKMARK [0][-]{chapter.5}{Conclusion}{}% 28
+\BOOKMARK [0][-]{chapter.2}{Question 1}{}% 2
+\BOOKMARK [1][-]{section.2.1}{What is the real name for the node file "/dev/root"}{chapter.2}% 3
+\BOOKMARK [1][-]{section.2.2}{What are the major and minor number for the "/dev/root" node file}{chapter.2}% 4
+\BOOKMARK [1][-]{section.2.3}{How the kernel knows that the rootfs in in the second partition}{chapter.2}% 5
+\BOOKMARK [0][-]{chapter.3}{Question 2}{}% 6
+\BOOKMARK [1][-]{section.3.1}{Mount manually the usrfs partition}{chapter.3}% 7
+\BOOKMARK [1][-]{section.3.2}{Modify /etc/fstab }{chapter.3}% 8
+\BOOKMARK [0][-]{chapter.4}{Question 3}{}% 9
+\BOOKMARK [1][-]{section.4.1}{EXT4 Performances}{chapter.4}% 10
+\BOOKMARK [0][-]{chapter.5}{Conclusion}{}% 11

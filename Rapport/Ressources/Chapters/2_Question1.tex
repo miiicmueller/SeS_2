@@ -1,0 +1,37 @@
+% Chapter Template
+
+\chapter{Question 1} % Main chapter title
+
+\label{Question 1} % Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
+
+\lhead{ \emph{EXT 4}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
+
+%----------------------------------------------------------------------------------------
+%	SECTION 1
+%----------------------------------------------------------------------------------------
+\section{What is the real name for the node file "/dev/root"}
+
+Si on lance la commande suivante :
+\begin{lstlisting}[frame=single,style=Console]  % Start your code-block
+
+# ls -al /dev/root
+lrwxrwxrwx    1 root     root             9 Jan  1 00:00 /dev/root -> mmcblk0p2
+\end{lstlisting}
+
+On remarque que "root" est un lien symbolique sur /dev/mmcblk0p2. 
+
+\section{What are the major and minor number for the "/dev/root" node file}
+
+Par analogie, on regarde les informations sur le fichier pointé :
+
+\begin{lstlisting}[frame=single,style=Console]  % Start your code-block
+
+ls -al /dev/mmcblk0p2 
+brw-rw----    1 root     root      179,   2 Jan  1 00:00 /dev/mmcblk0p2
+\end{lstlisting}
+
+On voit le numéro majeur est 179 et le numéro mineur 2. 
+
+\section{How the kernel knows that the rootfs in in the second partition}
+
+Le noyau sait que notre "rootfs" est sur "mmcblk0\textbf{p2}", car c'est un paramètre de boot que nous avons configuré dans "u-boot".

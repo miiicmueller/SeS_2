@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2014.10.1)  16 APR 2015 11:22
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2014.10.1)  23 APR 2015 16:56
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1157,7 +1157,7 @@ LaTeX Info: Redefining \nameref on input line 3.
 \openout5 = `__Rapport.out'.
 
  (./Ressources/_pagetitre.tex
-<Ressources/Logos/MSE_Logo.jpg, id=119, 948.54375pt x 85.31876pt>
+<Ressources/Logos/MSE_Logo.jpg, id=43, 948.54375pt x 85.31876pt>
 File: Ressources/Logos/MSE_Logo.jpg Graphic file (type jpg)
 
 <use Ressources/Logos/MSE_Logo.jpg>
@@ -1186,338 +1186,26 @@ Underfull \hbox (badness 10000) in paragraph at lines 11--12
 
  []
 
-) (./Ressources/Chapters/2_U_Boot.texpdfTeX warning (ext4): destination with th
-e same identifier (name{page.1}) has been already used, duplicate ignored
+) (./Ressources/Chapters/2_Question1.texpdfTeX warning (ext4): destination with
+ the same identifier (name{page.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
 l.3 \chapter
-            {Bootloader U-Boot} % Main chapter title [1
+            {Question 1} % Main chapter title [1
 
 ]
 Chapitre 2.
-[2
-
-] [3]
-<Ressources/Graphiques/deplacer_kernel.png, id=282, 664.4825pt x 652.4375pt>
-File: Ressources/Graphiques/deplacer_kernel.png Graphic file (type png)
-
-<use Ressources/Graphiques/deplacer_kernel.png>
-Package pdftex.def Info: Ressources/Graphiques/deplacer_kernel.png used on inpu
-t line 174.
-(pdftex.def)             Requested size: 398.33858pt x 391.11708pt.
- [4]
-<Ressources/Graphiques/deplacer_DTB.png, id=307, 793.96625pt x 777.90625pt>
-File: Ressources/Graphiques/deplacer_DTB.png Graphic file (type png)
-
-<use Ressources/Graphiques/deplacer_DTB.png>
-Package pdftex.def Info: Ressources/Graphiques/deplacer_DTB.png used on input l
-ine 189.
-(pdftex.def)             Requested size: 398.33858pt x 390.29346pt.
- [5 <./Ressources/Graphiques/deplacer_kernel.png>] [6 <./Ressources/Graphiques/
-deplacer_DTB.png>]
-<Ressources/Graphiques/bootelf.png, id=321, 832.10875pt x 530.98375pt>
-File: Ressources/Graphiques/bootelf.png Graphic file (type png)
-
-<use Ressources/Graphiques/bootelf.png>
-Package pdftex.def Info: Ressources/Graphiques/bootelf.png used on input line 2
-03.
-(pdftex.def)             Requested size: 426.79134pt x 272.34563pt.
- [7 <./Ressources/Graphiques/bootelf.png>] <Ressources/Graphiques/CRCOk.png, id
-=329, 703.62875pt x 223.83624pt>
-File: Ressources/Graphiques/CRCOk.png Graphic file (type png)
-
-<use Ressources/Graphiques/CRCOk.png>
-Package pdftex.def Info: Ressources/Graphiques/CRCOk.png used on input line 222
-.
-(pdftex.def)             Requested size: 426.79134pt x 135.768pt.
-
-<Ressources/Graphiques/badCRC.png, id=331, 645.41125pt x 167.62625pt>
-File: Ressources/Graphiques/badCRC.png Graphic file (type png)
-
-<use Ressources/Graphiques/badCRC.png>
-Package pdftex.def Info: Ressources/Graphiques/badCRC.png used on input line 22
-9.
-(pdftex.def)             Requested size: 426.79134pt x 110.84595pt.
-
-<Ressources/Graphiques/CRCPasCheck.png, id=332, 604.2575pt x 228.855pt>
-File: Ressources/Graphiques/CRCPasCheck.png Graphic file (type png)
-
-<use Ressources/Graphiques/CRCPasCheck.png>
-Package pdftex.def Info: Ressources/Graphiques/CRCPasCheck.png used on input li
-ne 238.
-(pdftex.def)             Requested size: 426.79134pt x 161.6431pt.
- [8 <./Ressources/Graphiques/CRCOk.png> <./Ressources/Graphiques/badCRC.png> <.
-/Ressources/Graphiques/CRCPasCheck.png>]
-<Ressources/Graphiques/Uboot_Hard_Before.png, id=341, 559.08875pt x 179.67125pt
->
-File: Ressources/Graphiques/Uboot_Hard_Before.png Graphic file (type png)
- <use Ressources/Graphiques/Uboot_Hard_Before.png>
-Package pdftex.def Info: Ressources/Graphiques/Uboot_Hard_Before.png used on in
-put line 256.
-(pdftex.def)             Requested size: 426.79134pt x 137.16017pt.
-
-<Ressources/Graphiques/Uboot_Hard_After.png, id=342, 692.5875pt x 281.05pt>
-File: Ressources/Graphiques/Uboot_Hard_After.png Graphic file (type png)
-
-<use Ressources/Graphiques/Uboot_Hard_After.png>
-Package pdftex.def Info: Ressources/Graphiques/Uboot_Hard_After.png used on inp
-ut line 263.
-(pdftex.def)             Requested size: 426.79134pt x 173.19423pt.
- [9 <./Ressources/Graphiques/Uboot_Hard_Before.png> <./Ressources/Graphiques/Ub
-oot_Hard_After.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 271--273
-
- []
-
-(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
-File: lstlang1.sty 2013/08/26 1.5b listings language file
-)
-(/usr/share/texlive/texmf-dist/tex/latex/listings/lstmisc.sty
-File: lstmisc.sty 2013/08/26 1.5b (Carsten Heinz)
-)
-LaTeX Font Info:    Try loading font information for T1+cmss on input line 301.
-
-
-(/usr/share/texlive/texmf-dist/tex/latex/base/t1cmss.fd
-File: t1cmss.fd 1999/05/25 v2.5h Standard LaTeX font definitions
-) [10])
-(./Ressources/Chapters/3_Secure_Kernel.tex [11]
-Chapitre 3.
-
-Underfull \hbox (badness 10000) in paragraph at lines 23--24
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 26--30
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 32--34
-
- []
-
-[12
+) (./Ressources/Chapters/3_Question2.tex [2
 
 ]
-Underfull \hbox (badness 10000) in paragraph at lines 36--37
+Chapitre 3.
+) (./Ressources/Chapters/4_Question3.tex [3
 
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 39--40
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 42--43
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 45--46
-
- []
-
-[13]
-Underfull \hbox (badness 10000) in paragraph at lines 62--63
-
- []
-
-(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
-File: lstlang1.sty 2013/08/26 1.5b listings language file
-)
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 68.
-
-(/usr/share/texlive/texmf-dist/tex/latex/base/omscmr.fd
-File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
-)
-LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <8> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 68.
-
-Underfull \hbox (badness 10000) in paragraph at lines 77--78
-
- []
-
-<Ressources/Graphiques/netstat_scapy.png, id=458, 676.5275pt x 161.60374pt>
-File: Ressources/Graphiques/netstat_scapy.png Graphic file (type png)
-
-<use Ressources/Graphiques/netstat_scapy.png>
-Package pdftex.def Info: Ressources/Graphiques/netstat_scapy.png used on input 
-line 83.
-(pdftex.def)             Requested size: 398.33858pt x 95.1555pt.
- [14 <./Ressources/Graphiques/netstat_scapy.png>]
-<Ressources/Graphiques/tcpsynCookie.png, id=475, 1275.76625pt x 905.3825pt>
-File: Ressources/Graphiques/tcpsynCookie.png Graphic file (type png)
-
-<use Ressources/Graphiques/tcpsynCookie.png>
-Package pdftex.def Info: Ressources/Graphiques/tcpsynCookie.png used on input l
-ine 102.
-(pdftex.def)             Requested size: 455.24408pt x 323.07774pt.
- [15 <./Ressources/Graphiques/tcpsynCookie.png>]
-<Ressources/Graphiques/tcpSyn_protection.png, id=483, 1275.76625pt x 905.3825pt
->
-File: Ressources/Graphiques/tcpSyn_protection.png Graphic file (type png)
- <use Ressources/Graphiques/tcpSyn_protection.png>
-Package pdftex.def Info: Ressources/Graphiques/tcpSyn_protection.png used on in
-put line 116.
-(pdftex.def)             Requested size: 455.24408pt x 323.07774pt.
-)
-(./Ressources/Chapters/4_Valgrind.tex [16 <./Ressources/Graphiques/tcpSyn_prote
-ction.png>]
+]
 Chapitre 4.
+) (./Ressources/Chapters/5_Conclusion.tex [4
 
-Underfull \hbox (badness 10000) in paragraph at lines 19--20
-
- []
-
-
-<Ressources/Graphiques/massif_avant_modif.png, id=491, 809.0225pt x 694.595pt>
-File: Ressources/Graphiques/massif_avant_modif.png Graphic file (type png)
-
-<use Ressources/Graphiques/massif_avant_modif.png>
-Package pdftex.def Info: Ressources/Graphiques/massif_avant_modif.png used on i
-nput line 29.
-(pdftex.def)             Requested size: 227.62204pt x 195.41795pt.
-
-Underfull \hbox (badness 10000) in paragraph at lines 32--33
-
- []
-
-[17
-
- <./Ressources/Graphiques/massif_avant_modif.png>]
-<Ressources/Graphiques/memcheck_avant_modif.png, id=500, 988.69376pt x 595.2237
-5pt>
-File: Ressources/Graphiques/memcheck_avant_modif.png Graphic file (type png)
- <use Ressources/Graphiques/memcheck_avant_modif.png>
-Package pdftex.def Info: Ressources/Graphiques/memcheck_avant_modif.png used on
- input line 41.
-(pdftex.def)             Requested size: 227.62204pt x 137.03482pt.
-
-Underfull \hbox (badness 10000) in paragraph at lines 44--45
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 46--47
-
- []
-
-<Ressources/Graphiques/modif_code1.png, id=501, 741.77126pt x 317.185pt>
-File: Ressources/Graphiques/modif_code1.png Graphic file (type png)
-
-<use Ressources/Graphiques/modif_code1.png>
-Package pdftex.def Info: Ressources/Graphiques/modif_code1.png used on input li
-ne 51.
-(pdftex.def)             Requested size: 398.33858pt x 170.33356pt.
-
-<Ressources/Graphiques/modif_code2.png, id=502, 847.165pt x 419.5675pt>
-File: Ressources/Graphiques/modif_code2.png Graphic file (type png)
-
-<use Ressources/Graphiques/modif_code2.png>
-Package pdftex.def Info: Ressources/Graphiques/modif_code2.png used on input li
-ne 58.
-(pdftex.def)             Requested size: 398.33858pt x 197.27997pt.
- [18 <./Ressources/Graphiques/memcheck_avant_modif.png> <./Ressources/Graphique
-s/modif_code1.png>]
-<Ressources/Graphiques/memcheck_apres_modifs.png, id=509, 859.21pt x 275.0275pt
->
-File: Ressources/Graphiques/memcheck_apres_modifs.png Graphic file (type png)
- <use Ressources/Graphiques/memcheck_apres_modifs.png>
-Package pdftex.def Info: Ressources/Graphiques/memcheck_apres_modifs.png used o
-n input line 65.
-(pdftex.def)             Requested size: 398.33858pt x 127.50458pt.
-
-<Ressources/Graphiques/sgcheck_bitmap.png, id=510, 660.4675pt x 161.60374pt>
-File: Ressources/Graphiques/sgcheck_bitmap.png Graphic file (type png)
-
-<use Ressources/Graphiques/sgcheck_bitmap.png>
-Package pdftex.def Info: Ressources/Graphiques/sgcheck_bitmap.png used on input
- line 72.
-(pdftex.def)             Requested size: 398.33858pt x 97.46849pt.
- [19 <./Ressources/Graphiques/modif_code2.png> <./Ressources/Graphiques/memchec
-k_apres_modifs.png> <./Ressources/Graphiques/sgcheck_bitmap.png>]
-<Ressources/Graphiques/memcheck_avant_exe2.png, id=515, 911.405pt x 469.755pt>
-File: Ressources/Graphiques/memcheck_avant_exe2.png Graphic file (type png)
-
-<use Ressources/Graphiques/memcheck_avant_exe2.png>
-Package pdftex.def Info: Ressources/Graphiques/memcheck_avant_exe2.png used on 
-input line 82.
-(pdftex.def)             Requested size: 398.33858pt x 205.3166pt.
-
-<Ressources/Graphiques/massif_exe2_avant.png, id=516, 737.75626pt x 569.12625pt
->
-File: Ressources/Graphiques/massif_exe2_avant.png Graphic file (type png)
- <use Ressources/Graphiques/massif_exe2_avant.png>
-Package pdftex.def Info: Ressources/Graphiques/massif_exe2_avant.png used on in
-put line 93.
-(pdftex.def)             Requested size: 398.33858pt x 307.28886pt.
- [20 <./Ressources/Graphiques/memcheck_avant_exe2.png> <./Ressources/Graphiques
-/massif_exe2_avant.png>]
-<Ressources/Graphiques/modif_exe2_main.png, id=525, 909.3975pt x 450.68375pt>
-File: Ressources/Graphiques/modif_exe2_main.png Graphic file (type png)
-
-<use Ressources/Graphiques/modif_exe2_main.png>
-Package pdftex.def Info: Ressources/Graphiques/modif_exe2_main.png used on inpu
-t line 105.
-(pdftex.def)             Requested size: 398.33858pt x 197.41434pt.
-
-Underfull \hbox (badness 10000) in paragraph at lines 109--110
-
- []
-
-
-<Ressources/Graphiques/modif_exe2_vectorCreate.png, id=526, 907.39pt x 465.74pt
->
-File: Ressources/Graphiques/modif_exe2_vectorCreate.png Graphic file (type png)
-
- <use Ressources/Graphiques/modif_exe2_vectorCreate.png>
-Package pdftex.def Info: Ressources/Graphiques/modif_exe2_vectorCreate.png used
- on input line 114.
-(pdftex.def)             Requested size: 398.33858pt x 204.4572pt.
- [21 <./Ressources/Graphiques/modif_exe2_main.png> <./Ressources/Graphiques/mod
-if_exe2_vectorCreate.png>]
-<Ressources/Graphiques/modif_exe2_vectorFree.png, id=533, 904.37875pt x 263.986
-25pt>
-File: Ressources/Graphiques/modif_exe2_vectorFree.png Graphic file (type png)
- <use Ressources/Graphiques/modif_exe2_vectorFree.png>
-Package pdftex.def Info: Ressources/Graphiques/modif_exe2_vectorFree.png used o
-n input line 123.
-(pdftex.def)             Requested size: 398.33858pt x 116.27112pt.
-
-Underfull \hbox (badness 10000) in paragraph at lines 126--127
-
- []
-
-
-<Ressources/Graphiques/modif_exe2_resize.png, id=534, 908.39375pt x 450.68375pt
->
-File: Ressources/Graphiques/modif_exe2_resize.png Graphic file (type png)
- <use Ressources/Graphiques/modif_exe2_resize.png>
-Package pdftex.def Info: Ressources/Graphiques/modif_exe2_resize.png used on in
-put line 131.
-(pdftex.def)             Requested size: 398.33858pt x 197.62752pt.
- [22 <./Ressources/Graphiques/modif_exe2_vectorFree.png> <./Ressources/Graphiqu
-es/modif_exe2_resize.png>]
-<Ressources/Graphiques/massif_apres_exe2.png, id=541, 732.7375pt x 442.65375pt>
-File: Ressources/Graphiques/massif_apres_exe2.png Graphic file (type png)
-<use Ressources/Graphiques/massif_apres_exe2.png>
-Package pdftex.def Info: Ressources/Graphiques/massif_apres_exe2.png used on in
-put line 142.
-(pdftex.def)             Requested size: 398.33858pt x 240.64374pt.
-
-<Ressources/Graphiques/memcheck_apres_exe2.png, id=542, 709.65125pt x 180.675pt
->
-File: Ressources/Graphiques/memcheck_apres_exe2.png Graphic file (type png)
- <use Ressources/Graphiques/memcheck_apres_exe2.png>
-Package pdftex.def Info: Ressources/Graphiques/memcheck_apres_exe2.png used on 
-input line 149.
-(pdftex.def)             Requested size: 398.33858pt x 101.41714pt.
-)
-(./Ressources/Chapters/5_Conclusion.tex [23 <./Ressources/Graphiques/massif_apr
-es_exe2.png> <./Ressources/Graphiques/memcheck_apres_exe2.png>]
+]
 Chapitre 5.
 
 Underfull \hbox (badness 10000) in paragraph at lines 10--11
@@ -1531,7 +1219,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 12--13
 
 ) 
 AED: lastpage setting LastPage
-[24
+[5
 
 ]
 Package atveryend Info: Empty hook `BeforeClearDocument' on input line 14.
@@ -1539,40 +1227,44 @@ Package atveryend Info: Empty hook `AfterLastShipout' on input line 14.
  (./__Rapport.aux)
 Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 14.
 Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 14.
-Package rerunfilecheck Info: File `__Rapport.out' has not changed.
-(rerunfilecheck)             Checksum: 5959B66B753E97A186E003DC5A10EC4D;1967.
+
+
+Package rerunfilecheck Warning: File `__Rapport.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `__Rapport.out':
+(rerunfilecheck)             Before: 05B17C322A318C7916725FB384CBFD03;643
+(rerunfilecheck)             After:  006A0CBCAABC883E9AD3527F35527061;753.
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
 Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 14.
  )
 (\end occurred when \ifx on line 3 was incomplete)
 (\end occurred when \ifx on line 3 was incomplete) 
 Here is how much of TeX's memory you used:
- 21964 strings out of 493304
- 388601 string characters out of 6139871
- 764310 words of memory out of 5000000
- 24668 multiletter control sequences out of 15000+600000
- 21892 words of font info for 47 fonts, out of 8000000 for 9000
+ 21089 strings out of 493304
+ 373680 string characters out of 6139871
+ 676188 words of memory out of 5000000
+ 24087 multiletter control sequences out of 15000+600000
+ 15989 words of font info for 39 fonts, out of 8000000 for 9000
  957 hyphenation exceptions out of 8191
- 58i,11n,58p,578b,1945s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 58i,6n,56p,573b,1126s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texmf/fonts/enc/d
 vips/cm-super/cm-super-t1.enc}</usr/share/texlive/texmf-dist/fonts/type1/public
-/amsfonts/cm/cmsy8.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx0800.p
-fb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1095.pfb></usr/share/texmf
-/fonts/type1/public/cm-super/sfbx1200.pfb></usr/share/texmf/fonts/type1/public/
-cm-super/sfbx1440.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx2074.pf
-b></usr/share/texmf/fonts/type1/public/cm-super/sfbx2488.pfb></usr/share/texmf/
-fonts/type1/public/cm-super/sfrm0600.pfb></usr/share/texmf/fonts/type1/public/c
-m-super/sfrm0800.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm0900.pfb
-></usr/share/texmf/fonts/type1/public/cm-super/sfrm1000.pfb></usr/share/texmf/f
-onts/type1/public/cm-super/sfrm1095.pfb></usr/share/texmf/fonts/type1/public/cm
--super/sfrm1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1440.pfb>
-</usr/share/texmf/fonts/type1/public/cm-super/sfrm2488.pfb></usr/share/texmf/fo
-nts/type1/public/cm-super/sfss0800.pfb></usr/share/texmf/fonts/type1/public/cm-
-super/sfti0800.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfti0900.pfb><
-/usr/share/texmf/fonts/type1/public/cm-super/sfti1095.pfb>
-Output written on __Rapport.pdf (26 pages, 1654267 bytes).
+/amsfonts/cm/cmsy8.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1095.p
+fb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1440.pfb></usr/share/texmf
+/fonts/type1/public/cm-super/sfbx2074.pfb></usr/share/texmf/fonts/type1/public/
+cm-super/sfbx2488.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm0800.pf
+b></usr/share/texmf/fonts/type1/public/cm-super/sfrm1000.pfb></usr/share/texmf/
+fonts/type1/public/cm-super/sfrm1095.pfb></usr/share/texmf/fonts/type1/public/c
+m-super/sfrm1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1440.pfb
+></usr/share/texmf/fonts/type1/public/cm-super/sfrm2488.pfb>
+Output written on __Rapport.pdf (7 pages, 205890 bytes).
 PDF statistics:
- 677 PDF objects out of 1000 (max. 8388607)
- 585 compressed objects within 6 object streams
- 288 named destinations out of 1000 (max. 500000)
- 367 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 171 PDF objects out of 1000 (max. 8388607)
+ 148 compressed objects within 2 object streams
+ 43 named destinations out of 1000 (max. 500000)
+ 90 words of extra memory for PDF output out of 10000 (max. 10000000)
 
