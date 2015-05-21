@@ -1,0 +1,41 @@
+\chapter{init Linux}
+\section{Script de démarrage}
+\subsection{Services}
+\begin{itemize}
+	\item sshd
+	\item httpd
+	\item ...
+\end{itemize}
+Généralement les démons sont démarrés en mode \textbf{root}
+
+\section{Démons}
+
+\section{init kernel}
+Avant start\_kernel, le processur init démarre les démons nécessaires
+
+\section{runlevel}
+\begin{lstlisting}[style=Bash]
+# Startup the system
+null::sysinit:/bin/mount -t proc proc /proc
+null::sysinit:/bin/mount -o remount,rw /
+null::sysinit:/bin/mkdir -p /dev/pts
+null::sysinit:/bin/mkdir -p /dev/shm
+null::sysinit:/bin/mount -a
+null::sysinit:/bin/hostname -F /etc/hostname
+# now run any rc scripts
+::sysinit:/etc/init.d/rcS
+
+# Put a getty on the serial port
+ttySAC2::respawn:/sbin/getty -L  ttySAC2 115200 vt100 # GENERIC_SERIAL
+
+# Stuff to do for the 3-finger salute
+::ctrlaltdel:/sbin/reboot
+
+# Stuff to do before rebooting
+::shutdown:/etc/init.d/rcK
+::shutdown:/sbin/swapoff -a
+::shutdown:/bin/umount -a -r
+\end{lstlisting}
+Pas de runlevel sous Odroid
+
+sysinit démarre avant toute autre commande telle que boot et bootwait.

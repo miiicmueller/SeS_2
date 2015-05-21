@@ -6,7 +6,345 @@
 
 \lhead{ \emph{EXT 4}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
 
+Sur la cible, la commande mount fourni les résultats suivants :
+\begin{lstlisting}[label=lst:mount odroid]
+# mount
+rootfs on / type rootfs (rw)
+/dev/root on / type ext4 (rw,relatime,data=ordered)
+devtmpfs on /dev type devtmpfs (rw,relatime,size=765136k,nr_inodes=120937,mode=755)
+proc on /proc type proc (rw,relatime)
+devpts on /dev/pts type devpts (rw,relatime,gid=5,mode=620)
+tmpfs on /dev/shm type tmpfs (rw,relatime,mode=777)
+tmpfs on /tmp type tmpfs (rw,relatime)
+sysfs on /sys type sysfs (rw,relatime)
+\end{lstlisting}
+De ces quelque lignes, il vient que /dev/root pointe vers la racine du système, à savoir /. Ceci provient des paramètres passés au noyau (\ref{lst:parameters}) lors de son démarrage et correspond physiquement à la partition mmcblk0p2 de la carte \usd. Ce point de montage (/) possède un autre nom tel que rootfs (première ligne de listing \ref{lst:mount odroid}). En effet, ce nom provient du formatage de la carte \usd réalisé lors d'un précédent laboratoire lequel nomme cette partition \textbf{rootfs}.
+
+\begin{lstlisting}[caption=Paramètres du noyau, label=lst:parameters]
+Kernel command line: console=ttySAC2,115200n8 earlyprintk debug root=/dev/mmcblk0p2 rw rootwait rootfstype=ext4 ip=192.168.0.11:192.168.0.4:192.168.0.4:255.255.255.0:odroidxu3:eth0:off
+\end{lstlisting}
+
+Pour vérifier cette théorie, l'utilisation de la commande readlink est utile :
+\begin{lstlisting}
+# readlink -f /dev/root
+/dev/mmcblk0p2
+\end{lstlisting}
+ou encore:
+\begin{lstlisting}
+# ls -l /dev/root
+lrwxrwxrwx    1 root     root             9 Jan  1 00:01 /dev/root -> mmcblk0p2
+\end{lstlisting}
+Cette dernière commande affiche une information de plus à savoir les numéro majeur et mineur du fichier en question. Ici, \textbf{/dev/root} ne possède pas de numéro majeur (major number) et possède le numéro mineur 9. Ces numéros identifient les pilotes de type caractères sous Linux. De plus, les fichiers spéciaux identifiant un pilote de périphérique de type caractère présente la lettre c devant la ligne correspondante. Ici, \textbf{/dev/root} est un lien symbolique vers \textbf{/dev/mmcblk0p2} qui lui-même est un pilote de type \textbf{block}. Ceci signifie que le noyau écrit les données sur celui-ci par multiple de la taille du bloc. \textbf{/dev/mmcblk0p2} possède le numéro majeur 179 et le numéro mineur 2.
+\begin{lstlisting}[style=Bash]
+# ls -l /dev/root
+lrwxrwxrwx    1 root     root             9 Jan  1 00:01 /dev/root -> mmcblk0p2
+# ls -l /dev/mmcblk0p2
+brw-rw----    1 root     root      179,   2 Jan  1 00:00 /dev/mmcblk0p2
+\end{lstlisting}
+
+Ainsi, le noyau connaît "l'adresse" de \textbf{rootfs} grâce au paramètre \textbf{root=/dev/mmcblk0p2} qui lui est passé au démarrage.
+
+\subsection{Montage de usrfs}
+La commande suivante permet de monter le système de fichier \textbf{usrfs} au point de montage \textbf{/mnt/usr}.
+\begin{lstlisting}[style=Bash]
+# mount /dev/mmcblk0p3 /mnt/usr -t ext4
+\end{lstlisting}
+Puis vient le fichier fstab qui sert à moonter cette partition au démarrage du noyau de façon automatique. La ligne suivante doit être ajoutée au fichier afin de permettre ce montage automatique.
+\begin{lstlisting}
+/dev/mmcblk0p3  /mnt/usr        ext4    defaults          0      0
+\end{lstlisting}
+Pour le contenu du fichier \textbf{fstab}, se référer à l'annexe \ref{an:fstab}
+
 %----------------------------------------------------------------------------------------
 %	SECTION 1
 %----------------------------------------------------------------------------------------
-\section{EXT4 Performances}
+\section{Performances de EXT4}
+
+La page de manuel de la commande mount donne ceci:
+\begin{lstlisting}[style=Bash]
+data={journal|ordered|writeback}
+              Specifies the journalling mode for file data.  Metadata is always journaled.  To use modes other than ordered on the root filesystem, pass the mode to the kernel  as  boot  parameter,  e.g.
+              rootflags=data=journal.
+
+              journal
+                     All data is committed into the journal prior to being written into the main filesystem.
+
+              ordered
+                     This is the default mode.  All data is forced directly out to the main file system prior to its metadata being committed to the journal.
+
+              writeback
+                     Data  ordering  is  not  preserved - data may be written into the main filesystem after its metadata has been committed to the journal.  This is rumoured to be the highest-throughput
+                     option.  It guarantees internal filesystem integrity, however it can allow old data to appear in files after a crash and journal recovery.
+
+       barrier=0 / barrier=1
+              This enables/disables barriers.  barrier=0 disables it, barrier=1 enables it.  Write barriers enforce proper on-disk ordering of journal commits, making volatile disk write caches  safe  to
+              use,  at some performance penalty.  The ext3 filesystem does not enable write barriers by default.  Be sure to enable barriers unless your disks are battery-backed one way or another.  Oth‐
+              erwise you risk filesystem corruption in case of power failure.
+\end{lstlisting}
+
+Pour la réalisation de cet exercice, il a été préalablement nécessaire d'installer un cross-compilateur pour Odroid sur la machine hôte utilisée. Ainsi, l'installation a été réalisée à l'aide des commandes suivantes:
+\begin{lstlisting}[style=Bash]
+cd /usr/local/arm
+wget https://launchpadlibrarian.net/129963014/gcc-linaro-arm-linux-gnueabihf-4.7-2013.01-20130125_linux.tar.xz
+xz -d gcc-linaro-arm-linux-gnueabihf-4.7-2013.01-20130125_linux.tar.xz 
+tar -xvf gcc-linaro-arm-linux-gnueabihf-4.7-2013.01-20130125_linux.tar
+ln -s gcc-linaro-arm-linux-gnueabihf-4.7-2013.01-20130125_linux /usr/local/arm/toolchain
+\end{lstlisting}
+
+Pour cet exercice il a fallu au préalable installer et compiler l'application \textbf{tune2fs} à l'aide de buildroot. Le listing \ref{lst:tune2fs} illustre la sélection des packages utilisés.
+\begin{lstlisting}[style=Bash]
+
+\end{lstlisting}
+
+\section{SquashFS}
+Le système de fichier Squash est un système de type lecture-seule et compressé. Il supporte des tailles de blocs jusqu'à 1Mo afin d'optimiser la compression des fichiers. Pour pouvoir l'utiliser sous Linux, il est au préalable nécessaire de modifier la compilation du kernel afin de le lui faire supporter. Ainsi, l'exécution et la configuration sont données:
+
+\begin{lstlisting}
+make linux-menuconfig
+    File systems  --->
+[*] Miscellaneous filesystems  --->
+<*>   SquashFS 4.0 - Squashed file system support
+\end{lstlisting}
+
+Afin de réaliser correctement cet exercice, quatre images squashFS ont été créées à l'aide des fichiers et dossiers générés par buildroot lors de la compilation du Kernel. Le script permettant la création des images est donné en annexe \ref{an:script squashfs}. Ainsi, les images obtenues ainsi que leur taille respectives sont données dans le tableau ci-dessous:
+\begin{table}[H]
+	\centering
+	\begin{tabular}{lrp{10cm}}
+	Fichier & Taille [ko] & Description\\
+	squashfs.default & 14487.5 & image squashfs sans option de compression\\
+	squashfs.noD & 26771.4 & image squashfs sans compression des blocs de données\\
+	squashfs.noI & 14553.1 & image squashfs sans compression de la table des i-noeuds\\
+	squashfs.noF & 24772.6 & image squashfs sans compression des blocs fragmentés
+	\end{tabular}
+	\caption{\label{table:squashfs size}Résumé de la taille de chaque image squashfs}
+\end{table}
+
+\begin{lstlisting}[style=Bash]
+# cd /mnt/usr/
+# ls
+lost+found        squashfs.noD      squashfs.noI
+squashfs.default  squashfs.noF
+# mkdir ../sqfs
+# mount squashfs.default /mnt/sqfs -t squashfs -o loop
+# mount
+rootfs on / type rootfs (rw)
+/dev/root on / type ext4 (rw,relatime,data=ordered)
+devtmpfs on /dev type devtmpfs (rw,relatime,size=765120k,nr_inodes=120929,mode=755)
+proc on /proc type proc (rw,relatime)
+devpts on /dev/pts type devpts (rw,relatime,gid=5,mode=620)
+tmpfs on /dev/shm type tmpfs (rw,relatime,mode=777)
+tmpfs on /tmp type tmpfs (rw,relatime)
+sysfs on /sys type sysfs (rw,relatime)
+/dev/mmcblk0p3 on /mnt/usr type ext4 (rw,relatime,data=ordered)
+/dev/loop0 on /mnt/sqfs type squashfs (ro,relatime)
+# ls -la /mnt/sqfs
+total 1
+drwxr-xr-x   18 root     root           256 Apr 30  2015 .
+drwxr-xr-x    4 root     root          1024 Jan  1 00:02 ..
+drwxrwxr-x    2 root     root           993 Apr 30  2015 bin
+drwxr-xr-x    3 root     root            52 Apr 14  2015 dev
+drwxr-xr-x    7 root     root           439 Apr 30  2015 etc
+drwxrwxr-x    3 root     root            26 Mar  5  2015 home
+drwxrwxr-x    5 root     root           953 Apr 30  2015 lib
+lrwxrwxrwx    1 root     root             3 Apr 14  2015 lib32 -> lib
+lrwxrwxrwx    1 root     root            11 Apr 14  2015 linuxrc -> bin/busybox
+drwx------    2 root     root             3 Apr 30  2015 lost+found
+drwxrwxr-x    2 root     root             3 Mar  5  2015 media
+drwxrwxr-x    2 root     root             3 Feb  3  2015 mnt
+drwxrwxr-x    2 root     root             3 Feb  3  2015 opt
+drwxrwxr-x    2 root     root             3 Feb  3  2015 proc
+drwx------    2 root     root            77 Mar  5  2015 root
+drwxrwxr-x    2 root     root           744 Apr 30  2015 sbin
+drwxrwxr-x    2 root     root             3 Mar  5  2015 sys
+drwxrwxrwt    2 root     root             3 Feb  3  2015 tmp
+drwxrwxr-x    7 root     root           102 Apr 30  2015 usr
+drwxrwxr-x    6 root     root            63 Apr 14  2015 var
+# mkdir /mnt/sqfs/test
+mkdir: can't create directory '/mnt/sqfs/test': Read-only file system
+\end{lstlisting}
+
+\begin{lstlisting}[style=Bash,caption=squashfs.noD]
+# mount squashfs.noD /mnt/sqfs -t squashfs -o loop
+# mount
+rootfs on / type rootfs (rw)
+/dev/root on / type ext4 (rw,relatime,data=ordered)
+devtmpfs on /dev type devtmpfs (rw,relatime,size=765120k,nr_inodes=120929,mode=755)
+proc on /proc type proc (rw,relatime)
+devpts on /dev/pts type devpts (rw,relatime,gid=5,mode=620)
+tmpfs on /dev/shm type tmpfs (rw,relatime,mode=777)
+tmpfs on /tmp type tmpfs (rw,relatime)
+sysfs on /sys type sysfs (rw,relatime)
+/dev/mmcblk0p3 on /mnt/usr type ext4 (rw,relatime,data=ordered)
+/dev/loop0 on /mnt/sqfs type squashfs (ro,relatime)
+# ls -la /mnt/sqfs
+total 1
+drwxr-xr-x   18 root     root           256 Apr 30  2015 .
+drwxr-xr-x    4 root     root          1024 Jan  1 00:02 ..
+drwxrwxr-x    2 root     root           993 Apr 30  2015 bin
+drwxr-xr-x    3 root     root            52 Apr 14  2015 dev
+drwxr-xr-x    7 root     root           439 Apr 30  2015 etc
+drwxrwxr-x    3 root     root            26 Mar  5  2015 home
+drwxrwxr-x    5 root     root           953 Apr 30  2015 lib
+lrwxrwxrwx    1 root     root             3 Apr 14  2015 lib32 -> lib
+lrwxrwxrwx    1 root     root            11 Apr 14  2015 linuxrc -> bin/busybox
+drwx------    2 root     root             3 Apr 30  2015 lost+found
+drwxrwxr-x    2 root     root             3 Mar  5  2015 media
+drwxrwxr-x    2 root     root             3 Feb  3  2015 mnt
+drwxrwxr-x    2 root     root             3 Feb  3  2015 opt
+drwxrwxr-x    2 root     root             3 Feb  3  2015 proc
+drwx------    2 root     root            77 Mar  5  2015 root
+drwxrwxr-x    2 root     root           744 Apr 30  2015 sbin
+drwxrwxr-x    2 root     root             3 Mar  5  2015 sys
+drwxrwxrwt    2 root     root             3 Feb  3  2015 tmp
+drwxrwxr-x    7 root     root           102 Apr 30  2015 usr
+drwxrwxr-x    6 root     root            63 Apr 14  2015 var
+# mkdir /mnt/sqfs/test
+mkdir: can't create directory '/mnt/sqfs/test': Read-only file system
+\end{lstlisting}
+
+\begin{lstlisting}[style=Bash,caption=squashfs.noF]
+# mount squashfs.noF /mnt/sqfs -t squashfs -o loop
+# mount
+rootfs on / type rootfs (rw)
+/dev/root on / type ext4 (rw,relatime,data=ordered)
+devtmpfs on /dev type devtmpfs (rw,relatime,size=765120k,nr_inodes=120929,mode=755)
+proc on /proc type proc (rw,relatime)
+devpts on /dev/pts type devpts (rw,relatime,gid=5,mode=620)
+tmpfs on /dev/shm type tmpfs (rw,relatime,mode=777)
+tmpfs on /tmp type tmpfs (rw,relatime)
+sysfs on /sys type sysfs (rw,relatime)
+/dev/mmcblk0p3 on /mnt/usr type ext4 (rw,relatime,data=ordered)
+/dev/loop0 on /mnt/sqfs type squashfs (ro,relatime)
+# ls -la /mnt/sqfs
+total 1
+drwxr-xr-x   18 root     root           256 Apr 30  2015 .
+drwxr-xr-x    4 root     root          1024 Jan  1 00:02 ..
+drwxrwxr-x    2 root     root           993 Apr 30  2015 bin
+drwxr-xr-x    3 root     root            52 Apr 14  2015 dev
+drwxr-xr-x    7 root     root           439 Apr 30  2015 etc
+drwxrwxr-x    3 root     root            26 Mar  5  2015 home
+drwxrwxr-x    5 root     root           953 Apr 30  2015 lib
+lrwxrwxrwx    1 root     root             3 Apr 14  2015 lib32 -> lib
+lrwxrwxrwx    1 root     root            11 Apr 14  2015 linuxrc -> bin/busybox
+drwx------    2 root     root             3 Apr 30  2015 lost+found
+drwxrwxr-x    2 root     root             3 Mar  5  2015 media
+drwxrwxr-x    2 root     root             3 Feb  3  2015 mnt
+drwxrwxr-x    2 root     root             3 Feb  3  2015 opt
+drwxrwxr-x    2 root     root             3 Feb  3  2015 proc
+drwx------    2 root     root            77 Mar  5  2015 root
+drwxrwxr-x    2 root     root           744 Apr 30  2015 sbin
+drwxrwxr-x    2 root     root             3 Mar  5  2015 sys
+drwxrwxrwt    2 root     root             3 Feb  3  2015 tmp
+drwxrwxr-x    7 root     root           102 Apr 30  2015 usr
+drwxrwxr-x    6 root     root            63 Apr 14  2015 var
+# mkdir /mnt/sqfs/test
+mkdir: can't create directory '/mnt/sqfs/test': Read-only file system
+\end{lstlisting}
+
+\begin{lstlisting}[style=Bash,caption=squashfs.noI]
+# mount squashfs.noI /mnt/sqfs -t squashfs -o loop
+# mount
+rootfs on / type rootfs (rw)
+/dev/root on / type ext4 (rw,relatime,data=ordered)
+devtmpfs on /dev type devtmpfs (rw,relatime,size=765120k,nr_inodes=120929,mode=755)
+proc on /proc type proc (rw,relatime)
+devpts on /dev/pts type devpts (rw,relatime,gid=5,mode=620)
+tmpfs on /dev/shm type tmpfs (rw,relatime,mode=777)
+tmpfs on /tmp type tmpfs (rw,relatime)
+sysfs on /sys type sysfs (rw,relatime)
+/dev/mmcblk0p3 on /mnt/usr type ext4 (rw,relatime,data=ordered)
+/dev/loop0 on /mnt/sqfs type squashfs (ro,relatime)
+# ls -la /mnt/sqfs
+total 1
+drwxr-xr-x   18 root     root           256 Apr 30  2015 .
+drwxr-xr-x    4 root     root          1024 Jan  1 00:02 ..
+drwxrwxr-x    2 root     root           993 Apr 30  2015 bin
+drwxr-xr-x    3 root     root            52 Apr 14  2015 dev
+drwxr-xr-x    7 root     root           439 Apr 30  2015 etc
+drwxrwxr-x    3 root     root            26 Mar  5  2015 home
+drwxrwxr-x    5 root     root           953 Apr 30  2015 lib
+lrwxrwxrwx    1 root     root             3 Apr 14  2015 lib32 -> lib
+lrwxrwxrwx    1 root     root            11 Apr 14  2015 linuxrc -> bin/busybox
+drwx------    2 root     root             3 Apr 30  2015 lost+found
+drwxrwxr-x    2 root     root             3 Mar  5  2015 media
+drwxrwxr-x    2 root     root             3 Feb  3  2015 mnt
+drwxrwxr-x    2 root     root             3 Feb  3  2015 opt
+drwxrwxr-x    2 root     root             3 Feb  3  2015 proc
+drwx------    2 root     root            77 Mar  5  2015 root
+drwxrwxr-x    2 root     root           744 Apr 30  2015 sbin
+drwxrwxr-x    2 root     root             3 Mar  5  2015 sys
+drwxrwxrwt    2 root     root             3 Feb  3  2015 tmp
+drwxrwxr-x    7 root     root           102 Apr 30  2015 usr
+drwxrwxr-x    6 root     root            63 Apr 14  2015 var
+# mkdir /mnt/sqfs/test
+mkdir: can't create directory '/mnt/sqfs/test': Read-only file system
+\end{lstlisting}
+
+\section{Partition squashfs}
+Pour réaliser cet exercice, le script de l'exercice 3, laboratoire \#1 (voir annexe \ref{an:script squashfs}) a été exécuté lorsque la carte \usd se trouvait dans le lecteur. Le système cible à ensuite pu être démarré sachant que les variables d'environnement uboot ont été modifiées à l'aide des commandes suivantes.
+
+
+Après avoir modifié le contenu du fichier /etc/fstab tel que donné ci-dessous
+\begin{lstlisting}
+# /etc/fstab: static file system information.
+#
+# <file system> <mount pt>     <type>   <options>         <dump> <pass>
+/dev/root       /              ext2     rw,noauto         0      1
+proc            /proc          proc     defaults          0      0
+devpts          /dev/pts       devpts   defaults,gid=5,mode=620   0      0
+tmpfs           /dev/shm       tmpfs    mode=0777         0      0
+tmpfs           /tmp           tmpfs    mode=1777         0      0
+sysfs           /sys           sysfs    defaults          0      0
+/dev/mmcblk0p3  /mnt/usr       ext4     defaults          0      0
+/dev/mmcblk0p4  /mnt/sqfs      squashfs defaults          0      0
+\end{lstlisting}
+
+les partitions ont pu être montées après création de leur point de montage sur la partition \textbf{rootfs}.
+\begin{lstlisting}
+# mkdir /mnt/usr
+# mkdir /mnt/sqfs
+\end{lstlisting}
+
+Ainsi, le montage du système de fichier \textbf{squashfs} donne les résultats suivants :
+\begin{lstlisting}
+# mount -a
+[  110.733993] [c7] EXT4-fs (mmcblk0p3): mounted filesystem with ordered data mode. Opts: (null)
+Jan  1 00:52:27 odroidxu3 user.info kernel: [  110.733993] [c7] EXT4-fs (mmcblk0p3): mounted filesystem with ordered data mode. Opts: (null)
+# ls /mnt/usr/
+lost+found
+# ls /mnt/sqfs/
+bin         home        linuxrc     mnt         root        tmp
+dev         lib         lost+found  opt         sbin        usr
+etc         lib32       media       proc        sys         var
+# mount
+rootfs on / type rootfs (rw)
+/dev/root on / type ext4 (rw,relatime,data=ordered)
+devtmpfs on /dev type devtmpfs (rw,relatime,size=765120k,nr_inodes=120929,mode=755)
+proc on /proc type proc (rw,relatime)
+devpts on /dev/pts type devpts (rw,relatime,gid=5,mode=620)
+tmpfs on /dev/shm type tmpfs (rw,relatime,mode=777)
+tmpfs on /tmp type tmpfs (rw,relatime)
+sysfs on /sys type sysfs (rw,relatime)
+/dev/mmcblk0p3 on /mnt/usr type ext4 (rw,relatime,data=ordered)
+/dev/mmcblk0p4 on /mnt/sqfs type squashfs (ro,relatime)
+\end{lstlisting}
+
+\subsection{Vérification de lecture seule}
+Un premier test de lecture seule a été réalisé à l'aide de la commande mkdir qui permet de créer un dossier. Cette commande a échoué sur le système de fichier cible (/mnt/sqfs:squashfs) qui signale "\textbf{Read-only file system}".
+\begin{lstlisting}
+# mkdir /mnt/sqfs/test
+mkdir: can't create directory '/mnt/sqfs/test': Read-only file system
+\end{lstlisting}
+
+Un second test a été réalisé à l'aide de l'édition du fichier \textbf{/etc/fstab} se trouvant sur le système cible. Le logiciel \textbf{vi} signale
+\begin{lstlisting}[style=Bash]
+- etc/fstab [Readonly] 1/9 11%
+\end{lstlisting}
+lors de l'édition. Le test a ensuite été poursuivi lors de la modification de ce fichier puis de sa sauvegarde. En effet, vi signale
+\begin{lstlisting}[style=Bash]
+'etc/fstab' is read only
+\end{lstlisting}
+lors de la commande
+\begin{lstlisting}[style=Bash]
+:wq
+\end{lstlisting}

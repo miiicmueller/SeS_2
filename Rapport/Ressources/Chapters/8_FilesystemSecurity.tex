@@ -1,0 +1,9 @@
+\chapter{Sécurité des systèmes de fichier}
+La commande ls -la /usr/bin/passw qui retourne
+-rwsr-xr-x 1 root root 47032 fév 17  2014 /usr/bin/passwd
+
+Ceci permet à tout utilisateur de changer son mot de passe à l'aide du programme passwd. En effet, grâce au bit Set user ID, l'execution du logiciel passwd change l'utilisateur d'exécution à l'utilisateur propriétaire.
+
+\section{fonctionnement}
+-rwsr-Sr-T
+le s minuscule indique que préalablement, l'utilisateur dispose des droits d'exécution sur le fichier. Le S majuscule indique que le groupe ne disposait pas d'exécution du fichier. identique pour T majuscule.
