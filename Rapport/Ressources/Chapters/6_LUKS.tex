@@ -36,13 +36,13 @@ et activer l'option :
 \begin{lstlisting}[frame=single,style=Console]  % Start your code-block
 
 target packages --> hardware handling --> cryptsetup
-\end{lstlisting}\\
+\end{lstlisting}
 
 Ensuite, après avoir installé le noyau et le rootfs sur la carte SD, on démarre l'Odroid. Pour vérifier si le support à bien été installé on tape la commande : 
 \begin{lstlisting}[frame=single,style=Console]  % Start your code-block
 
 cryptsetup --version
-\end{lstlisting}\\
+\end{lstlisting}
 
 Cryptsetup permet de gérer (lire et écrire) sur des volumes chiffrés par pain dm-crypt et LUKS. Ceci peut s'avérer fort utile lorsque les données utilisateur nécessite un degré de sécurité haut dessus de la normale.
 \subsection{Mode plain dm-crypt (plain mode)}

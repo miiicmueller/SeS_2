@@ -120,6 +120,21 @@ identifierstyle=\normalfont,
 	morekeywords={},
 	numbers = left, numberstyle=\tiny\color{black}}
 
+% Bash style displayed in linux terminal
+\lstdefinestyle{Bash}{
+	language=c,
+	showspaces=false,
+	backgroundcolor=\color{black},
+	basicstyle=\color{white}\ttfamily,
+	keywordstyle=\color{green},
+	commentstyle=\color{white}, 
+	stringstyle=\color{white},
+	title=\lstname,
+	numbers = left,
+	numberstyle=\tiny\color{black},
+	morekeywords={fdisk,grep}
+}
+
 \lstdefinestyle{Matlab}{
 	language=Matlab, showspaces=false, 
 	keywordstyle=		\color{blue}\scriptsize, 
@@ -131,6 +146,7 @@ identifierstyle=\normalfont,
 	numbers = left, numberstyle=\tiny\color{black}}
 	
 % commandes custom
+\newcommand{\usd}{$\mu SD$}
 \providecommand{\abs}[1]{\lvert#1\rvert} % valeur absolue
 \providecommand{\norm}[1]{\lVert#1\rVert} % norme
 \providecommand{\der}[2]{\frac{\mathrm{d}#1}{\mathrm{d}#2}} % derivee
