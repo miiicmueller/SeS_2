@@ -194,20 +194,20 @@ mount: wrong fs type, bad option, bad superblock on /dev/mmcblk0p3,
 \end{lstlisting}
 
 \section{Initramfs}
-u-boot propose d'utiliser initramfs mais de ce fait, il copie "bêtement" le rootfs là où devrait se trouver initramfs. Ici, l'idée est de faire les choses plus intelligente et générant un initramfs qui sera alors copier sur la \usd. u-boot le chargera ensuite dans la mémoire à l'aide de la commande
-
-Mettre image RAM <-> FLASH
+U-boot propose d'utiliser initramfs mais de ce fait, il copie "bêtement" le rootfs là où devrait se trouver initramfs. Ici, l'idée est de faire les choses plus intelligente en générant un initramfs qui sera alors copié sur la \usd. u-boot le chargera ensuite dans la mémoire.
 
 \href{http://forum.odroid.com/viewtopic.php?f=81&t=4860}{}
 
 \subsection{uBoot}
+Afin de supporter le démarrage de Initramfs, les varaibles d'environnement de uBoot doivent être modifiées. Le listing ci-dessous donne les différentes modifications à lui apporter.
+
 \begin{lstlisting}
 set initramfs_addr 0x42000000
 set addmmcargs 'setenv bootargs ${bootargs} root=/dev/mmcblk0p2 rw rootwait rootfstype=ext4'
 set mmcboot 'run addttyargs addmmcargs addipargs; ext2load mmc 0:1 ${fdts_addr} exynos5422-odroidxu3.dtb; ext2load mmc 0:1 ${kernel_addr} uImage; ext2load mmc 0:1 ${initramfs_addr} uInitrd; bootm ${kernel_addr} ${initramfs_addr} ${fdts_addr}'
 saveenv
 \end{lstlisting}
-Ceci implique que le \textbf{initramfs} doit se trouver à l'adresse \textbf{0x42000000} sur la carte \usd. Celui-là est une image au format cpio archive qui peut être générée manuellement.
+Ceci implique que \textbf{initramfs} se trouve à l'adresse \textbf{0x42000000} sur la carte \usd. Celui-là est une image au format \textbf{cpio archive} qui peut être générée manuellement.
 
 Pour installer le support du démarrage du noyau sur initramfs, il est au préalable nécessaire de l'installer à l'aide de buildroot:
 \begin{lstlisting}[style=Bash]
@@ -218,15 +218,14 @@ make linux-menuconfig
 \end{lstlisting}
 
 \subsection{Contenu}
-\begin{lstlisting}
-/init
-/bin/mount
-/lib/libmount.so.1
-	/...
-\end{lstlisting}
+Pour pouvoir démarrer, Initramfs à besoin d'un minimum de fichiers, lesquels sont listés ci-dessous :
+
+\textbf{bin,dev,etc,lib,lib64,mnt/root,proc,root,sbin,sys}
+
+\textbf{mnt/root} représente l'emplacement où sera chargé le nouveau système de fichier root. Dans le cas de cet exercice, il s'agit de \textbf{/newroot}.
 
 \subsection{Utilité}
-Cette technique peut être intéressante lorsqu'il faudrait interfacer un disque IDE avec Linux qui ne possède pas de driver dans le noyau. Ainsi, initramfs possède ce driver et effectue un pre-démarrage du noyau. Dans le fichier /init de initramfs se trouve une ligne permettant le chargement du module IDE (insmod). Ainsi, Linux saura communiquer avec le disque IDE.
+Cette technique peut être intéressante lorsque le système embarqué nécessite le support d'un disque dur IDE. En effet, une telle interface ne possède, dans certain cas, pas de pilote monolitique Linux. Ainsi, initramfs est un moyen très utilisé pour charger les pilotes nécessaire au noyau avant de donner la main au root file system principal. Le chargement d'un nouveau pilote est réalisé à l'aide du fichier /init de initramfs dans lequel se trouve une ligne permettant le chargement du module IDE (insmod). Ainsi, Linux saura communiquer avec le disque IDE une fois le root file system principal démarré.
 
 Cette technique est largement répandue dans les noyau dit "exotiques" dont celui-ci ne possèderait pas tout les pilotes nativement.
 
@@ -236,7 +235,7 @@ L'installation de cryptsetup sur la partition initramfs nécessite plusieurs op�
 \subsubsection{Copie des librairies nécessaires à cryptsetup}
 Pour l'installation de cryptsetup dans le système initramfs, il a préalablement été nécessaire d'exécuter la commande strings filtrée sur les librairies afin d'obtenir la liste des dépendances de cryptsetup:
 \begin{lstlisting}[style=Bash]
-$ strings buildroot/output/target/bin/cryptsetup
+$ strings buildroot/output/target/bin/cryptsetup | grep lib
 /lib/ld-linux-armhf.so.3
 libcryptsetup.so.4
 libuuid.so.1
@@ -245,4 +244,334 @@ libgcrypt.so.20
 libgpg-error.so.0
 libpopt.so.0
 libc.so.6
+\end{lstlisting}
+
+Une fois toutes les librairies identifiées, il est nécessaire de modifier le script de création de l'image initramfs afin d'y ajouter ces fichiers. Le script modifié permettant de réaliser une telle image est donné dans le listing \ref{lst:initramfs}.
+\begin{lstlisting}[label=lst:initramfs,caption=Génération de l'image initramfs]
+#!/bin/bash
+ROOTFS_LOC=initramfs
+BUILDROOT=~/ses/buildroot
+
+if [[ -d "$ROOTFS_LOC" ]]; then
+	rm -rf ${ROOTFS_LOC}
+fi
+
+mkdir $ROOTFS_LOC
+mkdir -p $ROOTFS_LOC/{bin,dev,etc,home,lib,newroot,proc,root,sbin,sys}
+
+cd $ROOTFS_LOC/dev
+sudo mknod null c 1 3
+sudo mknod tty c 5 0
+sudo mknod console c 5 1
+sudo mknod random c 1 8
+sudo mknod urandom c 1 9
+
+sudo mknod mmcblk0p b 179 0
+sudo mknod mmcblk0p1 b 179 1
+sudo mknod mmcblk0p2 b 179 2
+sudo mknod mmcblk0p3 b 179 3
+sudo mknod mmcblk0p4 b 179 4
+
+sudo mknod ttySAC0 c 204 64
+sudo mknod ttySAC1 c 204 65
+sudo mknod ttySAC2 c 204 66
+sudo mknod ttySAC3 c 204 67
+
+cd ../bin
+cp ${BUILDROOT}/output/target/bin/busybox .
+ln -s busybox ls
+ln -s busybox mkdir
+ln -s busybox ln
+ln -s busybox mknod
+ln -s busybox mount
+ln -s busybox umount
+ln -s busybox sh
+ln -s busybox sleep
+ln -s busybox dmesg
+cp ${BUILDROOT}/output/target/usr/bin/strace .
+cp ${BUILDROOT}/output/target/usr/sbin/cryptsetup .
+cp ${BUILDROOT}/output/target/sbin/insmod .
+cp ${BUILDROOT}/output/target/sbin/lsmod .
+cp ${BUILDROOT}/output/target/sbin/modprobe .
+
+cd ../sbin
+ln -s ../bin/busybox switch_root
+
+cd ../lib
+cp ${BUILDROOT}/output/target/lib/libc-2.19-2014.08.so .
+cp ${BUILDROOT}/output/target/lib/ld-2.19-2014.08.so .
+cp ${BUILDROOT}/output/target/usr/lib/libcryptsetup.so.4.6.0 .
+cp ${BUILDROOT}/output/target/lib/libuuid.so.1.3.0 .
+cp ${BUILDROOT}/output/target/usr/lib/libdevmapper.so.1.02 .
+cp ${BUILDROOT}/output/target/usr/lib/libgcrypt.so.20.0.2 .
+cp ${BUILDROOT}/output/target/usr/lib/libgpg-error.so.0.10.0 .
+cp ${BUILDROOT}/output/target/usr/lib/libpopt.so.0.0.0 .
+cp ${BUILDROOT}/output/target/lib/libpthread.so.0 .
+
+ln -s libc-2.19-2014.08.so libc.so.6
+ln -s ld-2.19-2014.08.so ld-linux-armhf.so.3
+ln -s libcryptsetup.so.4.6.0 libcryptsetup.so.4
+ln -s libuuid.so.1.3.0 libuuid.so.1
+ln -s libgcrypt.so.20.0.2 libgcrypt.so.20
+ln -s libgpg-error.so.0.10.0 libgpg-error.so.0
+ln -s libpopt.so.0.0.0 libpopt.so.0
+ln -s . arm-linux-gnueabihf
+
+cd ..
+
+cat << EOT >> init
+#!/bin/busybox sh
+mount -t proc none /proc
+mount -t sysfs none /sys
+
+. ./home/mountLuks
+
+umount /proc
+umount /sys
+
+exec sh
+# exec switch_root /newroot /init
+EOT
+
+chmod 755 ./init
+
+cd ..
+
+. ./postInstall
+
+sudo chown -R 0:0 $ROOTFS_LOC
+
+cd $ROOTFS_LOC
+find . | cpio --quiet -o -H newc > ../Initrd
+
+cd ..
+
+gzip -9 -c Initrd > Initrd.gz
+
+mkimage -A arm -T ramdisk -C none -d Initrd.gz uInitrd
+\end{lstlisting}
+
+Le script qui suit est appelé par le précédent et génère le script qui sera appelé par initramfs afin de monter la partition chiffrée.
+\begin{lstlisting}[label=lst:luks initramfs,caption=Montage de la partition chiffrée]
+#!/bin/bash
+
+echo "#########################################################################"
+echo "# Initramfs image post installation script                              #"
+echo "#                                                                       #"
+echo "# Author: Jonathan Worreth                                              #"
+echo "# Date: 08 May 2015                                                     #"
+echo "#                                                                       #"
+echo "# This script creates passphrase file which will be copied to the       #"
+echo "# the initram file system. It generates a script which will mount the   #"
+echo "# crypted part on the target.                                           #"
+echo "#                                                                       #"
+echo "#########################################################################"
+
+cd ${ROOTFS_LOC}/home
+
+if [[ -f passphrase ]]; then
+	rm passphrase
+fi
+
+dd if=/dev/urandom of=passphrase bs=1 count=64
+chmod 400 passphrase
+
+cat << EOT >> mountLuks
+#!/bin/busybox sh
+
+PART=/dev/mmcblk0p2
+DEST=/newroot
+CRYPTED_VOLUME=rootfs
+
+echo "[ STEP ] Setup \$PART to \$DEST"
+cryptsetup open --type luks --key-file home/passphrase \$PART \$CRYPTED_VOLUME
+
+echo "[ STEP ] Mounting \$PART to \$DEST"
+mount /dev/mapper/\$CRYPTED_VOLUME \$DEST
+EOT
+
+chmod 500 ./mountLuks
+
+cd ../..
+\end{lstlisting}
+
+\subsection{Exécution}
+Une fois la carte prète à l'exécution, elle a été introduite dans l'Odroid et celui-ci démarré. Le résultat du chargement de Initramfs est donné ci-dessous :
+\begin{lstlisting}[style=Bash]
+[ STEP ] Setup /dev/mmcblk0p2 to /newroot
+[   10.975193] [c6] bio: create slab <bio-1> at 1
+[   11.201114] [c7] bio: create slab <bio-1> at 1
+[ STEP ] Mounting /dev/mmcblk0p2 to /newroot
+[   11.212956] [c7] EXT4-fs (dm-0): couldn't mount as ext3 due to feature incompatibilities
+[   11.220194] [c7] EXT4-fs (dm-0): couldn't mount as ext2 due to feature incompatibilities
+[   11.327879] [c7] EXT4-fs (dm-0): recovery complete
+[   11.332869] [c7] EXT4-fs (dm-0): mounted filesystem with ordered data mode. Opts: (null)
+sh: can't access tty; job control turned off
+\end{lstlisting}
+
+Ces résultats montrent clairement que la partition a été montée avec succès car elle contient les fichiers suivants :
+
+\begin{lstlisting}[style=Bash]
+/ # ls /newroot
+bin         home        linuxrc     mnt         root        tmp
+dev         lib         lost+found  opt         sbin        usr
+etc         lib32       media       proc        sys         var
+\end{lstlisting}
+
+Pour démarré ne nouveau rootfs, la commande illustrée dans le listing \ref{lst:switch root} a été exécutée et son résultat joint au listing.
+\begin{lstlisting}[label={lst:switch root},caption=Changement de root file system]
+/ # exec switch_root /newroot /sbin/init
+can't open /dev/null: No such file or directory
+can't open /dev/null: No such file or directory
+can't open /dev/null: No such file or directory
+can't open /dev/null: No such file or directory
+can't open /dev/null: No such file or directory
+can't open /dev/null: No such file or directory
+Starting logging: OK
+Jan  1 00:13:55 odroidxu3 syslog.info syslogd started: BusyBox v1.22.1
+Jan  1 00:13:55 odroidxu3 user.notice kernel: klogd started: BusyBox v1.22.1 (2015-05-21 16:20:39 CEST)
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] Booting Linux on physical CPU 0x100
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] Initializing cgroup subsys cpu
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] Initializing cgroup subsys cpuacct
+Jan  1 00:13:55 odroidxu3 user.notice kernel: [    0.000000] [c0] Linux version 3.10.63 (embedhfw@experiment) (gcc version 4.9.2 20140904 (prerelease) (crosstool-NG linaro-1.13.1-4.9-2014.09 - Linaro GCC 4.9-5
+Jan  1 00:13:55 odroidxu3 user.warn kernel: [    0.000000] [c0] CPU: ARMv7 Processor [410fc073] revision 3 (ARMv7), cr=10c5387d
+Jan  1 00:13:55 odroidxu3 user.warn kernel: [    0.000000] [c0] CPU: PIPT / VIPT nonaliasing data cache, VIPT aliasing instruction cache
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] Machine: ODROID-XU3, model: Hardkernel odroid-xu3 board based on EXYNOS5422
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x6650000 bytes @ 0x0 defined for 0:common
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x400000 bytes @ 0x0 defined for 2:mfc_sh
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x800000 bytes @ 0x0 defined for 10:g2d_wfd
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x6000000 bytes @ 0x0 defined for 11:video
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x1000000 bytes @ 0x0 defined for 7:mfc_input
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x400000 bytes @ 0x0 defined for 9:sectbl
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x400000 bytes @ 0x0 defined for 8:mfc_fw
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x400000 bytes @ 0x0 defined for 12:mfc_nfw
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x400000 bytes @ 0x0 defined for 13:secdma
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 104 MiB at b8000000
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 4 MiB at b7c00000
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 8 MiB at b7400000
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 96 MiB at b1400000
+Starting mdev...
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 16 MiB at b0400000
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 4 MiB at b0000000
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 4 MiB at afc00000
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 4 MiB at af800000
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 4 MiB at af400000
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 256 MiB at 5f800000
+Jan  1 00:13:55 odroidxu3 user.warn kernel: [    0.000000] [c0] Memory policy: ECC disabled, Data cache writealloc
+Jan  1 00:13:55 odroidxu3 user.info kernel: [    0.000000] [c0] create_mapping_memory: section: 40000000 ~ 6f800000
+Jan  1 00:13:55 odroidxu3 user.warn kernel: [    0.000000] [c0] CPU EXYNOS5422 (id 0xe5422001)
+/etc/init.d/S10mdev: line 19: can't create /proc/sys/kernel/hotplug: nonexistent directory
+Jan  1 00:13:55 odroidxu3 user.debug kernel: [    0.000000] [c0] free_area_init_node: node 0, pgdat c097ab80, node_mem_map c0de2000
+Jan  1 00:13:55 odroidxu3 user.debug kernel: [    0.000000] [c0]   Normal zone: 1520 pages used for memmap
+Jan  1 00:13:55 odroidxu3 user.debug kernel: [    0.000000] [c0]   Normal zone: 0 pages reserved
+Jan  1 00:13:55 odroidxu3 user.debug kernel: [    0.000000] [c0]   Normal zone: 194560 pages, LIFO Jan  1 00:13:5Jan  1 00:13:5Jan  1 00:13:5Jan  1 00:13:5Jan  1 00:13:5Jan  1 00:13:5mdev: /sys/class: No suchy
+Starting network...
+ip: RTNETLINK answers: File exists
+ifup: can't open '/var/run/ifstate': No such file or directory
+Couldn't open /dev/null: No such file or directory
+Starting sshd: Couldn't open /dev/null: No such file or directory
+touch: /var/lock/sshd: No such file or directory
+OK
+/etc/init.d/S90fan_low_speed: line 2: can't create /sys/class/pwm/pwmchip0/export: nonexistent directory
+/etc/init.d/S90fan_low_speed: line 3: can't create /sys/class/pwm/pwmchip0/pwm0/period: nonexistent directory
+/etc/init.d/S90fan_low_speed: line 4: can't create /sys/class/pwm/pwmchip0/pwm0/duty_cycle: nonexistent directory
+/etc/init.d/S90fan_low_speed: line 5: can't create /sys/class/pwm/pwmchip0/pwm0/enable: nonexistent directory
+/etc/init.d/S90fan_low_speed: line 6: can't create /sys/class/pwm/pwmchip0/unexport: nonexistent directory
+can't open /dev/ttySAC2: No such file or directory
+Jan  1 00:13:56 odroidxu3 daemon.info init: can't open /dev/ttySAC2: No such file or directory
+Jan  1 00:13:57 odroidxu3 daemon.info init: process '/sbin/getty -L  ttySAC2 115200 vt100 ' (pid 1660) exited. Scheduling for restart.
+\end{lstlisting}
+
+\subsection{Analyse des résultats}
+La première chose à constater est que le script \textbf{init} exécuté n'est probablement pas le bon car les noeuds dont il a besoin ne sont pas disponibles. Il s'agit de :
+\begin{description}
+	\item[/dev/null]
+	\item[/var/run/ifstate]
+	\item[/var/loc/sshd]
+	\item[/dev/ttySAC2]
+\end{description}
+Une alternative a ce problème est de démarrer la commande \textbf{sh} à la place de démarrer \textbf{/sbin/init}
+\begin{lstlisting}
+exec switch_root /newroot /sbin/sh
+\end{lstlisting}
+Qui ne démarre aucun démon ni logiciel.
+
+\subsection{Démarrage automatique}
+Pour réaliser un démarrage automatique du nouveau root file system il suffit de modifier la ligne
+\begin{lstlisting}
+exec sh
+\end{lstlisting}
+qui devient
+\begin{lstlisting}
+exec switch_root /newroot /sbin/init
+\end{lstlisting}
+
+qui produit les mêmes résultats que précédemment, à une différence près : La ligne 8 qui n'affiche pas la commande exécutée (\textbf{exec switch\_root /newroot /sbin/init})
+\begin{lstlisting}
+[ STEP ] Setup /dev/mmcblk0p2 to /newroot
+[   11.027084] [c7] bio: create slab <bio-1> at 1
+[   11.247513] [c4] bio: create slab <bio-1> at 1
+[ STEP ] Mounting /dev/mmcblk0p2 to /newroot
+[   11.259272] [c4] EXT4-fs (dm-0): couldn't mount as ext3 due to feature incompatibilities
+[   11.266512] [c4] EXT4-fs (dm-0): couldn't mount as ext2 due to feature incompatibilities
+[   11.284174] [c4] EXT4-fs (dm-0): mounted filesystem with ordered data mode. Opts: (null)
+can't open /dev/null: No such file or directory
+can't open /dev/null: No such file or directory
+can't open /dev/null: No such file or directory
+can't open /dev/null: No such file or directory
+can't open /dev/null: No such file or directory
+can't open /dev/null: No such file or directory
+Starting logging: OK
+Jan  1 00:00:07 odroidxu3 syslog.info syslogd started: BusyBox v1.22.1
+Jan  1 00:00:07 odroidxu3 user.notice kernel: klogd started: BusyBox v1.22.1 (2015-05-21 16:20:39 CEST)
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] Booting Linux on physical CPU 0x100
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] Initializing cgroup subsys cpu
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] Initializing cgroup subsys cpuacct
+Jan  1 00:00:07 odroidxu3 user.notice kernel: [    0.000000] [c0] Linux version 3.10.63 (embedhfw@experiment) (gcc version 4.9.2 20140904 (prerelease) (crosstool-NG linaro-1.13.1-4.9-2014.09 - Linaro GCC 4.9-5
+Jan  1 00:00:07 odroidxu3 user.warn kernel: [    0.000000] [c0] CPU: ARMv7 Processor [410fc073] revision 3 (ARMv7), cr=10c5387d
+Jan  1 00:00:07 odroidxu3 user.warn kernel: [    0.000000] [c0] CPU: PIPT / VIPT nonaliasing data cache, VIPT aliasing instruction cache
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] Machine: ODROID-XU3, model: Hardkernel odroid-xu3 board based on EXYNOS5422
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x6650000 bytes @ 0x0 defined for 0:common
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x400000 bytes @ 0x0 defined for 2:mfc_sh
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x800000 bytes @ 0x0 defined for 10:g2d_wfd
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x6000000 bytes @ 0x0 defined for 11:video
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x1000000 bytes @ 0x0 defined for 7:mfc_input
+Starting mdev...
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x400000 bytes @ 0x0 defined for 9:sectbl
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x400000 bytes @ 0x0 defined for 8:mfc_fw
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x400000 bytes @ 0x0 defined for 12:mfc_nfw
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] ION: Contiguous 0x400000 bytes @ 0x0 defined for 13:secdma
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 104 MiB at b8000000
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 4 MiB at b7c00000
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 8 MiB at b7400000
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 96 MiB at b1400000
+/etc/init.d/S10mdev: line 19: Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 16 MiB at b0400000
+can't create /proc/sys/kernel/hotplug: nonexistent directory
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 4 MiB at b0000000
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 4 MiB at afc00000
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 4 MiB at af800000
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 4 MiB at af400000
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] cma: CMA: reserved 256 MiB at 5f800000
+Jan  1 00:00:07 odroidxu3 user.warn kernel: [    0.000000] [c0] Memory policy: ECC disabled, Data cache writealloc
+Jan  1 00:00:07 odroidxu3 user.info kernel: [    0.000000] [c0] create_mapping_memory: section: 40000000 ~ 6f800000
+Jan  1 00:00:07 odroidxu3 user.warn kernel: [    0.000000] [c0] CPU EXYNOS5422 (id 0xe5422001)
+Jan  1 00:00:07 odroidxu3 user.debug kernel: [    0.000000] [c0] On node 0 totalpages: 518656
+Jan  1 00:00:07 odroidxu3 user.debug kernel: [    0.000000] [c0] free_area_init_node: node 0, pgdat c097ab80, node_mem_map c0de2000
+Jan  1 00:00:07 odroidxu3 user.debug kernel: [    0.000000] [c0]   Normal zone: 1520 pages used for memmap
+Jan  1 00:00:07 odroidxu3 user.debug kernel: [    0.000000] [c0]   Normal zone: 0 pages reserJan  1 00:00:0Jan  1 00:00:0Jan  1 00:00:0Jan  1 00:00:0Jan  1 00:00:0mdev: /sys/class: No such file or directory
+Starting network...
+ip: RTNETLINK answers: File exists
+ifup: can't open '/var/run/ifstate': No such file or directory
+Couldn't open /dev/null: No such file or directory
+Starting sshd: Couldn't open /dev/null: No such file or directory
+touch: /var/lock/sshd: No such file or directory
+OK
+/etc/init.d/S90fan_low_speed: line 2: can't create /sys/class/pwm/pwmchip0/export: nonexistent directory
+/etc/init.d/S90fan_low_speed: line 3: can't create /sys/class/pwm/pwmchip0/pwm0/period: nonexistent directory
+/etc/init.d/S90fan_low_speed: line 4: can't create /sys/class/pwm/pwmchip0/pwm0/duty_cycle: nonexistent directory
+/etc/init.d/S90fan_low_speed: line 5: can't create /sys/class/pwm/pwmchip0/pwm0/enable: nonexistent directory
+/etc/init.d/S90fan_low_speed: line 6: can't create /sys/class/pwm/pwmchip0/unexport: nonexistent directory
+can't open /dev/ttySAC2: No such file or directory
+Jan  1 00:00:07 odroidxu3 daemon.info init: can't open /dev/ttySAC2: No such file or directory
+Jan  1 00:00:08 odroidxu3 daemon.info init: process '/sbin/getty -L  ttySAC2 115200 vt100 ' (pid 1656) exited. Scheduling for restart.
 \end{lstlisting}
