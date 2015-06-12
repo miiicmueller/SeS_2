@@ -11,27 +11,53 @@
 %----------------------------------------------------------------------------------------
 \section{What is the real name for the node file "/dev/root"}
 
-Si on lance la commande suivante :
-\begin{lstlisting}[frame=single,style=Console]  % Start your code-block
+Sur la cible, la commande \textbf{mount} fourni les résultats suivants :
+\begin{lstlisting}[label=lst:mount odroid]
+# mount
+rootfs on / type rootfs (rw)
+/dev/root on / type ext4 (rw,relatime,data=ordered)
+devtmpfs on /dev type devtmpfs (rw,relatime,size=765136k,nr_inodes=120937,mode=755)
+proc on /proc type proc (rw,relatime)
+devpts on /dev/pts type devpts (rw,relatime,gid=5,mode=620)
+tmpfs on /dev/shm type tmpfs (rw,relatime,mode=777)
+tmpfs on /tmp type tmpfs (rw,relatime)
+sysfs on /sys type sysfs (rw,relatime)
+\end{lstlisting}
+De ces quelque lignes, il vient que /dev/root pointe vers la racine du système, à savoir /. Ceci provient des paramètres passés au noyau (\ref{lst:parameters}) lors de son démarrage et correspond physiquement à la partition mmcblk0p2 de la carte \usd. Ce point de montage (/) possède un autre nom tel que rootfs (première ligne de listing \ref{lst:mount odroid}). En effet, ce nom provient du formatage de la carte \usd réalisé lors d'un précédent laboratoire lequel nomme cette partition \textbf{rootfs}.
 
-# ls -al /dev/root
-lrwxrwxrwx    1 root     root             9 Jan  1 00:00 /dev/root -> mmcblk0p2
+\begin{lstlisting}[caption=Paramètres du noyau, label=lst:parameters]
+Kernel command line: console=ttySAC2,115200n8 earlyprintk debug root=/dev/mmcblk0p2 rw rootwait rootfstype=ext4 ip=192.168.0.11:192.168.0.4:192.168.0.4:255.255.255.0:odroidxu3:eth0:off
 \end{lstlisting}
 
-On remarque que "root" est un lien symbolique sur /dev/mmcblk0p2. 
+Pour vérifier cette théorie, l'utilisation de la commande readlink donne :
+\begin{lstlisting}
+# readlink -f /dev/root
+/dev/mmcblk0p2
+\end{lstlisting}
+ou encore:
+\begin{lstlisting}
+# ls -l /dev/root
+lrwxrwxrwx    1 root     root             9 Jan  1 00:01 /dev/root -> mmcblk0p2
+\end{lstlisting}
 
 \section{What are the major and minor number for the "/dev/root" node file}
-
-Par analogie, on regarde les informations sur le fichier pointé :
-
-\begin{lstlisting}[frame=single,style=Console]  % Start your code-block
-
-ls -al /dev/mmcblk0p2 
+Cette dernière commande affiche une information de plus à savoir les numéro majeur et mineur du fichier en question. Ici, \textbf{/dev/root} ne possède pas de numéro majeur (major number) ni mineur car il s'agit d'un lien. Ces numéros identifient les pilotes sous Linux. De plus, les fichiers spéciaux identifiant un pilote de périphérique de type caractère présente la lettre c devant la ligne correspondante. Ici, \textbf{/dev/root} est un lien symbolique vers \textbf{/dev/mmcblk0p2} qui lui-même est un pilote de type \textbf{block}. Ceci signifie que le noyau écrit les données sur celui-ci par multiple de la taille du bloc. \textbf{/dev/mmcblk0p2} possède le numéro majeur 179 et le numéro mineur 2.
+\begin{lstlisting}[style=Bash]
+# ls -l /dev/root
+lrwxrwxrwx    1 root     root             9 Jan  1 00:01 /dev/root -> mmcblk0p2
+# ls -l /dev/mmcblk0p2
 brw-rw----    1 root     root      179,   2 Jan  1 00:00 /dev/mmcblk0p2
 \end{lstlisting}
 
-On voit le numéro majeur est 179 et le numéro mineur 2. 
+Ainsi, le noyau connaît "l'adresse" de \textbf{rootfs} grâce au paramètre \textbf{root=/dev/mmcblk0p2} qui lui est passé au démarrage.
 
-\section{How the kernel knows that the rootfs in in the second partition}
-
-Le noyau sait que notre "rootfs" est sur "mmcblk0\textbf{p2}", car c'est un paramètre de boot que nous avons configuré dans "u-boot".
+\section{Montage de usrfs}
+La commande suivante permet de monter le système de fichier \textbf{usrfs} au point de montage \textbf{/mnt/usr}.
+\begin{lstlisting}[style=Bash]
+# mount /dev/mmcblk0p3 /mnt/usr -t ext4
+\end{lstlisting}
+Puis vient le fichier fstab qui sert à moonter cette partition au démarrage du noyau de façon automatique. La ligne suivante doit être ajoutée au fichier afin de permettre ce montage automatique.
+\begin{lstlisting}
+/dev/mmcblk0p3  /mnt/usr        ext4    defaults          0      0
+\end{lstlisting}
+Pour le contenu du fichier \textbf{fstab}, se référer à l'annexe \ref{an:fstab}
