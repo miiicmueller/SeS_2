@@ -9,25 +9,16 @@
 %----------------------------------------------------------------------------------------
 %	SECTION 1
 %----------------------------------------------------------------------------------------
-\section{Mount manually the usrfs partition}
-
-Voilà la commande de montage avec les paramètres par défauts :
-
-\begin{lstlisting}[frame=single,style=Console]  % Start your code-block
-
+\section{Montage de usrfs}
+La commande suivante permet de monter le système de fichier \textbf{usrfs} au point de montage \textbf{/mnt/usr}.
+\begin{lstlisting}[style=Console]
 # mkdir /mnt/usr
-# mount  -o rw,suid,dev,exec,async /dev/mmcblk0p3 /mnt/usr/
+# mount /dev/mmcblk0p3 /mnt/usr -t ext4
 # mount
 	...
 	/dev/mmcblk0p3 on /mnt/usr type ext4 (rw,relatime,data=ordered)
 \end{lstlisting}
-
-On voit que notre système à bien monté la partition au bon endroit.
-
-\section{Modify /etc/fstab }
-
-Voilà la version avec le montage automatique du "usrfs" :
-
+Puis vient le fichier fstab qui sert à monter cette partition au démarrage du noyau de façon automatique. La ligne suivante doit être ajoutée au fichier afin de permettre ce montage automatique.
 \begin{lstlisting}[frame=single,style=Console]  % Start your code-block
 
 # cat /etc/fstab 
@@ -42,5 +33,4 @@ tmpfs           /dev/shm       tmpfs    mode=0777         0      0
 tmpfs           /tmp           tmpfs    mode=1777         0      0
 sysfs		/sys	       sysfs    defaults	  0	 0
 \end{lstlisting}
-
-
+Pour le contenu du fichier \textbf{fstab}, se référer à l'annexe \ref{an:fstab}

@@ -50,14 +50,3 @@ brw-rw----    1 root     root      179,   2 Jan  1 00:00 /dev/mmcblk0p2
 \end{lstlisting}
 
 Ainsi, le noyau connaît "l'adresse" de \textbf{rootfs} grâce au paramètre \textbf{root=/dev/mmcblk0p2} qui lui est passé au démarrage.
-
-\section{Montage de usrfs}
-La commande suivante permet de monter le système de fichier \textbf{usrfs} au point de montage \textbf{/mnt/usr}.
-\begin{lstlisting}[style=Bash]
-# mount /dev/mmcblk0p3 /mnt/usr -t ext4
-\end{lstlisting}
-Puis vient le fichier fstab qui sert à moonter cette partition au démarrage du noyau de façon automatique. La ligne suivante doit être ajoutée au fichier afin de permettre ce montage automatique.
-\begin{lstlisting}
-/dev/mmcblk0p3  /mnt/usr        ext4    defaults          0      0
-\end{lstlisting}
-Pour le contenu du fichier \textbf{fstab}, se référer à l'annexe \ref{an:fstab}
