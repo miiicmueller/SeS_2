@@ -35,7 +35,7 @@ et la commande \textbf{ps -ale | grep daemon}
 
 Cela nous a permis de constater que le démon n'a pas pu se lancer correctement (il n'est pas dans les processus en cours d'exécution) et que c'est parce qu'il n'a pas pu accéder au répertoire souhaité (\textbf{chdir error} indiqué dans le fichier \textbf{messages}, et si on regarde le code du démon, c'est qu'il n'a pas réussi à accéder au répertoire \textbf{/home/test/daemon}), probablement parce qu'il n'a pas les droits nécessaires.\\
 
-
+Ensuite on a supprimé ce répertoire \textbf{/home/test/daemon/} et on l'a recréé mais en tant qu'utilisateur \textbf{test}, et on a relancé le démon.
 
 \section{init kernel}
 Avant start\_kernel, le processus init démarre les démons nécessaires. 
