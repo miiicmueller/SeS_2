@@ -12,38 +12,6 @@
 
 
 \section{LUKS, cryptsetup, dmcrypt}
-\subsection{Installation}
-
-Il faut installer le support dans le noyau avec : 
-\begin{lstlisting}[frame=single,style=Console]  % Start your code-block
-
-make linux-menuconfig
-\end{lstlisting}
-
-et activer l'option : 
-\begin{lstlisting}[frame=single,style=Console]  % Start your code-block
-
-device driver --> Multiple Devices drivers support (RAID and LVM) --> Device mapper support --> Crypt target support
-\end{lstlisting}
-
-Et ensuite il faut installer le support dans buildroot avec : 
-\begin{lstlisting}[frame=single,style=Console]  % Start your code-block
-
-make menuconfig
-\end{lstlisting}
-
-et activer l'option : 
-\begin{lstlisting}[frame=single,style=Console]  % Start your code-block
-
-target packages --> hardware handling --> cryptsetup
-\end{lstlisting}
-
-Ensuite, après avoir installé le noyau et le rootfs sur la carte SD, on démarre l'Odroid. Pour vérifier si le support à bien été installé on tape la commande : 
-\begin{lstlisting}[frame=single,style=Console]  % Start your code-block
-
-cryptsetup --version
-\end{lstlisting}
-
 Cryptsetup permet de gérer (lire et écrire) sur des volumes chiffrés par pain dm-crypt et LUKS. Ceci peut s'avérer fort utile lorsque les données utilisateur nécessite un degré de sécurité haut dessus de la normale.
 \subsection{Mode plain dm-crypt (plain mode)}
 Ce mode permet de chiffrer le périphérique secteur par secteur à l'aide d'une simple clé non-salée ou une passphrase. Aucune vérifications n'est réalisées, et aucune méta données n'est utilisée. De plus, aucune opération de formatage n'est effectuée sur les données. Lorsqu'un périphérique brut est mappé (ouvert), les opérations usuelles peuvent lui être appliquées, incluant la création de système de fichier. Les périphériques ainsi mappés sont généralement disponibles dans \textbf{/dev/mapper/<périphérique>}.
@@ -56,7 +24,7 @@ Pour des raisons de sécurité, le mode "\textbf{LUKS extension}" est recommand�
 \begin{description}
 	\item[--hash, -h] Spécifie le hachage à utiliser lors du hachage du mot de passe. Cette option n'est utilie que lors de l'action de création. La chaîne de hachage est passée à libgcrypt ainsi tout les hashes acceptés par gcrypt sont supportés.
 	\item[-key-file, -d] Utilise un fichier comme matériel de clé. Avec LUKS, le matériel de clé fourni par ce fichier via cette option sont toujours utilisés pour les passphrases existantes. Pour créer une nouvelle clé via un fichier de clé, il est nécessaire d'utiliser un argument positionel à luksFormat ou luksAddKey.
-	\item[Cipher par défaut] Pour LUKS, le cipher par défaut est "aes-xts-plain64", selon la documentation. \cite{luksCipher}
+	\item[Cipher par défaut] Pour LUKS, le cipher par défaut est "aes-xts-plain64", selon la documentation.
 \end{description}
 
 \subsection{Installation}
@@ -76,7 +44,7 @@ make menuconfig
 [*] cryptsetup
 \end{lstlisting}
 
-Puis sur le système embarqué:
+Puis, le système embarqué démarré à l'aide du noyau nouvellement compilé, il est nécessaire de tester la récente installation. La partition mmcblk0p3 est donc formatée avec LUKS :
 \begin{lstlisting}
 # cryptsetup --key-size 256 luksFormat /dev/mmcblk0p3
 
@@ -93,36 +61,93 @@ Jan  1 00:01:12 odroidxu3 user.info kernel: [   75.674159] [c0] bio: create slab
 Jan  1 00:01:15 odroidxu3 user.info kernel: [   78.687741] [c5] bio: create slab <bio-1> at 1
 \end{lstlisting}
 
+Le script qui suit permet de formater la partition \#3 au format Luks puis y place un fichier. Le script ajoute ensuite une clé et copie ensuite l'entête du fichier. Pour finir, il copie 1MB de la partition pour comparer les données.
 \begin{lstlisting}[style=Bash]
-# cat 1-emptyLuks.txt 
+#!/bin/sh
+
+PART=/dev/mmcblk0p3
+DEST=/mnt/usr
+CRYPTED_VOLUME=usrfs
+
+umount $DEST
+
+if [ ! -d "$DEST" ];
+then
+        mkdir $DEST
+fi
+
+echo "[ STEP ] Creating LUKS partition on mmcblk0p3"
+cryptsetup --verify-passphrase --key-size 256 luksFormat $PART
+
+echo "[ STEP ] Copy 1 MB from the LUKS partition"   
+cryptsetup luksDump $PART > 1-emptyLuks.txt
+
+echo "[ STEP ] Setup $PART to $DEST"
+cryptsetup open --type luks $PART $CRYPTED_VOLUME
+
+ls -la /dev/mapper
+
+echo "[ STEP ] Formatting /dev/mapper/$CRYPTED_VOLUME"
+mkfs.ext4 /dev/mapper/$CRYPTED_VOLUME
+
+echo "[ STEP ] Mounting $PART to $DEST"
+mount /dev/mapper/$CRYPTED_VOLUME $DEST
+
+echo "[ STEP ] Copying helloworld.txt to $DEST"
+cp helloWorld.txt $DEST
+
+echo "[ STEP ] Adding a new passphrase to LUKS partition"
+cryptsetup -y luksAddKey $PART
+
+echo "[ STEP ] Dumping header partition and master key"
+cryptsetup luksDump $PART > 2-addKeyLuks.txt
+
+echo "[ STEP ] Unmounting $DEST"                      
+umount $DEST
+
+echo "[ STEP ] Closing luks partition"                   
+cryptsetup luksClose $CRYPTED_VOLUME
+\end{lstlisting}
+
+Les informations d'en-tête récupérées sont illustrées par le listing ci-dessous.
+\begin{lstlisting}[style=Bash]
+# cat 2-addKeyLuks.txt 
 LUKS header information for /dev/mmcblk0p3
 
-Version:        1
-Cipher name:    aes
-Cipher mode:    xts-plain64
-Hash spec:      sha1
-Payload offset: 4096
-MK bits:        256
-MK digest:      14 d1 64 7b 97 c2 d2 88 8b da a7 8c 9e 40 52 d0 4a ae a9 24 
-MK salt:        24 d9 98 89 cd 13 8f 54 4f 59 42 bd 61 fd 47 a3 
-                e9 fe 12 52 e5 d4 ef ad 8c 6d f6 86 5e 9c 88 eb 
-MK iterations:  24125
-UUID:           b2edfb67-b213-4047-bf46-c635ab03b821
+Version:       	1
+Cipher name:   	aes
+Cipher mode:   	xts-plain64
+Hash spec:     	sha1
+Payload offset:	4096
+MK bits:       	256
+MK digest:     	d6 1e ef 0b 3f 07 28 4b 85 de e3 ee 35 74 32 1d 94 fe 33 ba 
+MK salt:       	26 9c d8 b7 10 68 16 6f e2 e3 4e e2 bd 32 7d 57 
+               	d9 08 0d 42 e6 44 cd 82 cb fe 1d 38 3b 3f 11 01 
+MK iterations: 	32500
+UUID:          	58791743-f049-465c-b28f-db0d4b0dbfea
 
 Key Slot 0: ENABLED
-        Iterations:             99224
-        Salt:                   6a 80 7c b0 bf 69 26 0f 61 c2 dd 1a 7b 7d a6 be 
-                                90 15 07 fc b3 45 b7 37 08 75 d9 f3 e6 bf a6 d3 
-        Key material offset:    8
-        AF stripes:             4000
-Key Slot 1: DISABLED
+	Iterations:         	131551
+	Salt:               	00 cf 14 3e c9 3a 34 32 d3 f1 21 cb 6f 8a 91 c1 
+	                      	5a 76 29 e8 00 ac 73 ab b9 cc e5 e8 58 76 81 1b 
+	Key material offset:	8
+	AF stripes:            	4000
+Key Slot 1: ENABLED
+	Iterations:         	131281
+	Salt:               	b4 30 6c 5f e9 64 ad 08 3c 08 9f 90 76 72 be 98 
+	                      	ba 03 93 c6 4e 87 f0 6c 22 51 1c ca 11 0b 26 3a 
+	Key material offset:	264
+	AF stripes:            	4000
 Key Slot 2: DISABLED
 Key Slot 3: DISABLED
 Key Slot 4: DISABLED
 Key Slot 5: DISABLED
 Key Slot 6: DISABLED
 Key Slot 7: DISABLED
-# hexdump 1-emptyLuksDump -n 1000
+\end{lstlisting}
+Il indique que la partition possède deux clés et que la master key dispose de 256 bits et est au format sha-1. La copie de la partition est donnée ci dessous et comparée avec les informations d'en-tête :
+
+\begin{lstlisting}[style=Bash]
 0000000 554c 534b beba 0100 6561 0073 0000 0000
 0000010 0000 0000 0000 0000 0000 0000 0000 0000
 0000020 0000 0000 0000 0000 7478 2d73 6c70 6961
@@ -130,18 +155,18 @@ Key Slot 7: DISABLED
 0000040 0000 0000 0000 0000 6873 3161 0000 0000
 0000050 0000 0000 0000 0000 0000 0000 0000 0000
 0000060 0000 0000 0000 0000 0000 0010 0000 2000
-0000070 d114 7b64 c297 88d2 da8b 8ca7 409e d052
-0000080 ae4a 24a9 d924 8998 13cd 548f 594f bd42
-0000090 fd61 a347 fee9 5212 d4e5 adef 6d8c 86f6
-00000a0 9c5e eb88 0000 3d5e 3262 6465 6266 3736
-00000b0 622d 3132 2d33 3034 3734 622d 3466 2d36
-00000c0 3663 3533 6261 3330 3862 3132 0000 0000
-00000d0 ac00 f371 0100 9883 806a b07c 69bf 0f26
-00000e0 c261 1add 7d7b bea6 1590 fc07 45b3 37b7
-00000f0 7508 f3d9 bfe6 d3a6 0000 0800 0000 a00f
-0000100 0000 adde 0000 0000 0000 0000 0000 0000
-0000110 0000 0000 0000 0000 0000 0000 0000 0000
-0000120 0000 0000 0000 0000 0000 0801 0000 a00f
+0000070 1ed6 0bef 073f 4b28 de85 eee3 7435 1d32
+0000080 fe94 ba33 9c26 b7d8 6810 6f16 e3e2 e24e
+0000090 32bd 577d 08d9 420d 44e6 82cd fecb 381d
+00000a0 3f3b 0111 0000 f47e 3835 3937 3731 3334
+00000b0 662d 3430 2d39 3634 6335 622d 3832 2d66
+00000c0 6264 6430 6234 6430 6662 6165 0000 0000
+00000d0 ac00 f371 0200 df01 cf00 3e14 3ac9 3234
+00000e0 f1d3 cb21 8a6f c191 765a e829 ac00 ab73
+00000f0 ccb9 e8e5 7658 1b81 0000 0800 0000 a00f
+0000100 ac00 f371 0200 d100 30b4 5f6c 64e9 08ad
+0000110 083c 909f 7276 98be 03ba c693 874e 6cf0
+0000120 5122 ca1c 0b11 3a26 0000 0801 0000 a00f
 0000130 0000 adde 0000 0000 0000 0000 0000 0000
 0000140 0000 0000 0000 0000 0000 0000 0000 0000
 0000150 0000 0000 0000 0000 0000 0802 0000 a00f
@@ -162,36 +187,41 @@ Key Slot 7: DISABLED
 0000240 0000 0000 0000 0000 0000 0807 0000 a00f
 0000250 0000 0000 0000 0000 0000 0000 0000 0000
 *
-00003e0
+0001000 82c3 ffe7 35d8 7704 f5cd f39b cab4 1b9a
+
 \end{lstlisting}
+Les clés de la partition se trouvent à l'offset 0e8 pour la première et 118 pour la seconde. Il est intéressante de constater que l'offset décrit par l'en-tête correspond à l'offset par rapport aux adresses 0e0 ou 110.
 
 \subsection{Taille de l'en-tête}
-l'en-tête de la partition LUKS est représenté par la figure \ref{fig:luks partition header}.
+l'en-tête de la partition LUKS est représenté par la figure \ref{fig:luks partition header}. Dans le cas de cet exercice, il représente une taille de \textbf{4kB}.
 \begin{figure}
 	\centering
 	\includegraphics[width=10cm]{q5.6.3/luks-partition-header}
 	\caption{\label{fig:luks partition header}En-tête de la partition LUKS}
 \end{figure}
+Comme le montre la copie binaire de la partition, les données chiffrées se trouvent bien à l'offset 1000 (hexa) correspondant à 4096.
+
 Dans ce cas, chaque slot de clé possède 256 bits car la commande utilisée pour créer les clés de partition est la suivante:
 \begin{lstlisting}
 cryptsetup --verify-passphrase --key-size 256 luksFormat /dev/mmcblk0p3
 \end{lstlisting}
-
-Comme la taille de l'en-tête de la partition est inconue, une petite mesure a été réalisée et consiste à ne modifier que la clé maîtresse du chiffrement afin d'en connaître précisément la taille.
-\begin{lstlisting}
-cryptsetup -y luksAddKey /dev/mmcblk0p3
-\end{lstlisting}
-http://auto0.info/secret-messages-download-red-hat-fedora
+De plus, "le key material offset" indique que la première clé se trouve à la position 8 et la seconde à la position 264. La différence des deux donne bien 256 B.
 
 \subsection{Montage sur l'ordinateur hôte}
+Pour pouvoir monter la partition, il est nécessaire de passer par cryptsetup qui va ouvrir la partion pour le déchiffrement. Bien entendu, il est nécessaire de connaître le mot de passe.
 \begin{lstlisting}
-$ sudo mount -t ext4 /dev/mmcblk0p3 /media/embedhfw/usrfs
-mount: wrong fs type, bad option, bad superblock on /dev/mmcblk0p3,
-       missing codepage or helper program, or other error
-       In some cases useful info is found in syslog - try
-       dmesg | tail  or so
-
+sudo cryptsetup open --type luks /dev/mmcblk0p3 usrfs
+[sudo] password for ***: 
+Enter passphrase for /dev/mmcblk0p3:
+sudo mount -t ext4 /dev/mapper/usrfs /media/***/usrfs/
+ls -la /media/***/usrfs/
+total 18
+drwxr-xr-x  3 root root  1024 jun 13 06:51 .
+drwxr-x---+ 3 root root  4096 jun 13 07:21 ..
+-rw-r--r--  1 root root    23 jun 13 06:51 helloWorld.txt
+drwx------  2 root root 12288 jun 13 06:51 lost+found
 \end{lstlisting}
+Ceci prouve que la partition peut être montée sur n'importe quelle machine à condition que la clé de déchiffrement soit connue.
 
 \section{Initramfs}
 U-boot propose d'utiliser initramfs mais de ce fait, il copie "bêtement" le rootfs là où devrait se trouver initramfs. Ici, l'idée est de faire les choses plus intelligente en générant un initramfs qui sera alors copié sur la \usd. u-boot le chargera ensuite dans la mémoire.
@@ -232,7 +262,7 @@ Cette technique est largement répandue dans les noyau dit "exotiques" dont celu
 \subsection{Installation dans initramfs}
 L'installation de cryptsetup sur la partition initramfs nécessite plusieurs opérations, notamment la copie des librairies dynamiques permettant l'exécution de \textbf{cryptsetup} puis l'installation du module noyau appelé \textbf{dm\_mod}.
 
-\subsubsection{Copie des librairies nécessaires à cryptsetup}
+\subsubsection*{Copie des librairies nécessaires à cryptsetup}
 Pour l'installation de cryptsetup dans le système initramfs, il a préalablement été nécessaire d'exécuter la commande strings filtrée sur les librairies afin d'obtenir la liste des dépendances de cryptsetup:
 \begin{lstlisting}[style=Bash]
 $ strings buildroot/output/target/bin/cryptsetup | grep lib
@@ -490,11 +520,11 @@ La première chose à constater est que le script \textbf{init} exécuté n'est 
 	\item[/var/loc/sshd]
 	\item[/dev/ttySAC2]
 \end{description}
-Une alternative a ce problème est de démarrer la commande \textbf{sh} à la place de démarrer \textbf{/sbin/init}
+Une alternative a ce problème est de démarrer la commande \textbf{sh} à la place de démarrer \textbf{/sbin/init} en modifiant la commande ainsi:
 \begin{lstlisting}
 exec switch_root /newroot /sbin/sh
 \end{lstlisting}
-Qui ne démarre aucun démon ni logiciel.
+Qui ne démarre aucun démon ni logiciel mais qui permet de travailler sur le nouveau rootfs.
 
 \subsection{Démarrage automatique}
 Pour réaliser un démarrage automatique du nouveau root file system il suffit de modifier la ligne
@@ -507,7 +537,7 @@ exec switch_root /newroot /sbin/init
 \end{lstlisting}
 
 qui produit les mêmes résultats que précédemment, à une différence près : La ligne 8 qui n'affiche pas la commande exécutée (\textbf{exec switch\_root /newroot /sbin/init})
-\begin{lstlisting}
+\begin{lstlisting}[numbers=left]
 [ STEP ] Setup /dev/mmcblk0p2 to /newroot
 [   11.027084] [c7] bio: create slab <bio-1> at 1
 [   11.247513] [c4] bio: create slab <bio-1> at 1
