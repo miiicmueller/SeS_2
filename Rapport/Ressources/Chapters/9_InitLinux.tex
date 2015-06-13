@@ -1,6 +1,15 @@
 \chapter{init Linux}
 \section{Script de démarrage}
 \subsection{Services}
+
+Au démarrage, le système exécute les scripts situés dans \textbf{/etc/init.d/} :
+
+\begin{center} 
+\hspace{15cm}
+\includegraphics[width=16cm]{init_d.png}
+\end{center}
+\vspace{0.5cm}
+
 \begin{itemize}
 	\item sshd
 	\item httpd
@@ -9,6 +18,8 @@
 
 \section{Démons}
 La liste des démons qui doivent être démarrés se trouve dans le fichier \textbf{/etc/inittab} qui décrit également quand et comment ils doivent être démarrés. Par exemple au démarrage du système, à l'arrêt du système, ...\\
+
+\subsection{Contrôle des droits de daemon2}
 
 Généralement les démons sont démarrés en mode \textbf{root}. Mais dans le programme du démon, on peut utiliser les appels systèmes \textbf{umask()}, \textbf{setsid()}, \textbf{setegid()} et \textbf{seteuid()} pour changer les droits du processus (démon) afin qu'il n'ait plus les droits \textbf{root} pour éviter qu'un attaquant puisse se servir du démon pour faire des choses en tant que \textbf{root}. \\
 
@@ -25,17 +36,129 @@ Pour tester les droits, la première fois on a créé ce répertoire en tant qu'
 \end{center}
 \vspace{0.5cm}
 
-et la commande \textbf{ps -ale | grep daemon}
+et les commandes \textbf{ps -ale | grep daemon}, \textbf{plsof | grep daemon} et \textbf{ls -lisa /home/test/daemon}
 
 \begin{center} 
 \hspace{15cm}
-\includegraphics[width=16cm]{daemon_ps_1.png}
+\includegraphics[width=16cm]{daemon_ps_lsof_txt_1.png}
 \end{center}
 \vspace{0.5cm}
 
-Cela nous a permis de constater que le démon n'a pas pu se lancer correctement (il n'est pas dans les processus en cours d'exécution) et que c'est parce qu'il n'a pas pu accéder au répertoire souhaité (\textbf{chdir error} indiqué dans le fichier \textbf{messages}, et si on regarde le code du démon, c'est qu'il n'a pas réussi à accéder au répertoire \textbf{/home/test/daemon}), probablement parce qu'il n'a pas les droits nécessaires.\\
+Cela nous a permis de constater que le démon n'a pas pu se lancer correctement (il n'est pas dans les processus en cours d'exécution) et que c'est parce qu'il n'a pas pu créer le fichier \textbf{t.txt} dans le répertoire. Le fichier \textbf{messages} nous indique aucune erreur dans le lancement du démon, et si on regarde le code du démon, c'est qu'il a réussi à accéder au répertoire \textbf{/home/test/daemon} (avec la commande \textbf{chdir}) mais qu'il n'a pas pu créer et ouvrir le fichier \textbf{t.txt}, probablement parce qu'il n'a pas les droits nécessaires.\\
 
-Ensuite on a supprimé ce répertoire \textbf{/home/test/daemon/} et on l'a recréé mais en tant qu'utilisateur \textbf{test}, et on a relancé le démon.
+Ensuite on a supprimé ce répertoire \textbf{/home/test/daemon/} et on l'a recréé mais en tant qu'utilisateur \textbf{test}, et on a relancé le démon.\\
+
+Cette fois-ci le programme redémarre et s'exécute normalement, comme on peut le voir dans les processus :
+
+\begin{center} 
+\hspace{15cm}
+\includegraphics[width=16cm]{daemon_ps_2.png}
+\end{center}
+\vspace{0.5cm}
+
+les fichiers ouverts :
+
+\begin{center} 
+\hspace{15cm}
+\includegraphics[width=16cm]{daemon_lsof_2.png}
+\end{center}
+\vspace{0.5cm}
+
+le fichiers \textbf{/var/log/mesages} :
+
+\begin{center} 
+\hspace{15cm}
+\includegraphics[width=16cm]{daemon_messages_2.png}
+\end{center}
+\vspace{0.5cm}
+
+ainsi que le fichier \textbf{t.txt} dans lequel il écrit :
+
+\begin{center} 
+\hspace{15cm}
+\includegraphics[width=7cm]{daemon_txt_2.png}
+\end{center}
+\vspace{0.5cm}
+
+Cela nous a permis de savoir que le changement de droits du démon (avec \textbf{umask()}, \textbf{setsid()}, \textbf{setegid()} et \textbf{seteuid()}) fonctionne correctement.
+
+\subsection{Différence entre sysinit et respawn dans inittab}
+
+Dans le fichier \textbf{/etc/inittab} on indique de quelle manière on veut démarrer un démon. Avec \textbf{sysinit} le démon est démarré une seule fois au lors du boot du système. Avec \textbf{respawn} il sera redémarré automatiquement s'il est arrêté.\\
+
+Pour tester la différence entre ces deux modes, on a modifié le fichier \textbf{/etc/inittab} pour y ajouter le démarrage de daemon2, une fois avec \textbf{sysinit} et la seconde avec \textbf{respawn}.\\
+
+\begin{center} 
+\hspace{15cm}
+\includegraphics[width=5cm]{daemon_sysinit_inittab.png}
+\end{center}
+\vspace{0.5cm}
+
+ou :
+
+\begin{center} 
+\hspace{15cm}
+\includegraphics[width=5cm]{daemon_respawn_inittab.png}
+\end{center}
+\vspace{0.5cm}
+
+Ensuite on redémarre le système avec \textbf{reboot}. Pour \textbf{sysinit} cela donne :
+
+\begin{center} 
+\hspace{15cm}
+\includegraphics[width=16cm]{daemon_sysinit_ps.png}
+\end{center}
+\vspace{0.5cm}
+
+\begin{center} 
+\hspace{15cm}
+\includegraphics[width=16cm]{daemon_sysinit_lsof.png}
+\end{center}
+\vspace{0.5cm}
+
+\begin{center} 
+\hspace{15cm}
+\includegraphics[width=16cm]{daemon_sysinit_messages.png}
+\end{center}
+\vspace{0.5cm}
+
+\begin{center} 
+\hspace{15cm}
+\includegraphics[width=5cm]{daemon_sysinit_txt.png}
+\end{center}
+\vspace{0.5cm}
+
+On voit donc qu'avec cette technique le démon à démarré et s'est exécuté normalement en même temps que le démarrage du système.
+
+Et pour \textbf{respawn} cela donne :
+
+\begin{center} 
+\hspace{15cm}
+\includegraphics[width=16cm]{daemon_respawn_ps.png}
+\end{center}
+\vspace{0.5cm}
+
+\begin{center} 
+\hspace{15cm}
+\includegraphics[width=16cm]{daemon_respawn_lsof.png}
+\end{center}
+\vspace{0.5cm}
+
+\begin{center} 
+\hspace{15cm}
+\includegraphics[width=16cm]{daemon_respawn_messages.png}
+\end{center}
+\vspace{0.5cm}
+
+\begin{center} 
+\hspace{15cm}
+\includegraphics[width=5cm]{daemon_respawn_txt.png}
+\end{center}
+\vspace{0.5cm}
+
+On voit cette fois qu'il y a plusieurs processus daemon2 qui sont démarrés. Cela est dû au fait que le programme de \textbf{daemon2.c} fait un \textbf{fork()} et que le processus enfant prend le relais alors que le processus parent se termine. Comme le processus parent se termine, le système détecte que le \textbf{daemon2} est terminé et le relance aussitôt puisqu'il est configuré en \textbf{respawn} dans \textbf{inittab}. La nouvelle instance démarre, fait un \textbf{fork()} et etc. le cycle reprend et on obtient une multitude de processus \textbf{daemon2} qui sont lancés...\\
+
+On voit aussi dans le fichier \textbf{t.txt} qu'il ne contient pas des valeurs cohérentes (l'incrément passe d'un coup de 0 à 36). Cela est dû au fait que tous ces processus essaient de d'accéder au fichier de manière concurrente, et y écrivent chacun leur tour avec leur propre valeur d'incrément.
 
 \section{init kernel}
 Avant start\_kernel, le processus init démarre les démons nécessaires. 
