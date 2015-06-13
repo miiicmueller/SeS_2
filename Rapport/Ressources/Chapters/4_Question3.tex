@@ -6,61 +6,11 @@
 
 \lhead{ \emph{EXT 4}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
 
-Sur la cible, la commande mount fourni les résultats suivants :
-\begin{lstlisting}[label=lst:mount odroid]
-# mount
-rootfs on / type rootfs (rw)
-/dev/root on / type ext4 (rw,relatime,data=ordered)
-devtmpfs on /dev type devtmpfs (rw,relatime,size=765136k,nr_inodes=120937,mode=755)
-proc on /proc type proc (rw,relatime)
-devpts on /dev/pts type devpts (rw,relatime,gid=5,mode=620)
-tmpfs on /dev/shm type tmpfs (rw,relatime,mode=777)
-tmpfs on /tmp type tmpfs (rw,relatime)
-sysfs on /sys type sysfs (rw,relatime)
-\end{lstlisting}
-De ces quelque lignes, il vient que /dev/root pointe vers la racine du système, à savoir /. Ceci provient des paramètres passés au noyau (\ref{lst:parameters}) lors de son démarrage et correspond physiquement à la partition mmcblk0p2 de la carte \usd. Ce point de montage (/) possède un autre nom tel que rootfs (première ligne de listing \ref{lst:mount odroid}). En effet, ce nom provient du formatage de la carte \usd réalisé lors d'un précédent laboratoire lequel nomme cette partition \textbf{rootfs}.
-
-\begin{lstlisting}[caption=Paramètres du noyau, label=lst:parameters]
-Kernel command line: console=ttySAC2,115200n8 earlyprintk debug root=/dev/mmcblk0p2 rw rootwait rootfstype=ext4 ip=192.168.0.11:192.168.0.4:192.168.0.4:255.255.255.0:odroidxu3:eth0:off
-\end{lstlisting}
-
-Pour vérifier cette théorie, l'utilisation de la commande readlink est utile :
-\begin{lstlisting}
-# readlink -f /dev/root
-/dev/mmcblk0p2
-\end{lstlisting}
-ou encore:
-\begin{lstlisting}
-# ls -l /dev/root
-lrwxrwxrwx    1 root     root             9 Jan  1 00:01 /dev/root -> mmcblk0p2
-\end{lstlisting}
-Cette dernière commande affiche une information de plus à savoir les numéro majeur et mineur du fichier en question. Ici, \textbf{/dev/root} ne possède pas de numéro majeur (major number) et possède le numéro mineur 9. Ces numéros identifient les pilotes de type caractères sous Linux. De plus, les fichiers spéciaux identifiant un pilote de périphérique de type caractère présente la lettre c devant la ligne correspondante. Ici, \textbf{/dev/root} est un lien symbolique vers \textbf{/dev/mmcblk0p2} qui lui-même est un pilote de type \textbf{block}. Ceci signifie que le noyau écrit les données sur celui-ci par multiple de la taille du bloc. \textbf{/dev/mmcblk0p2} possède le numéro majeur 179 et le numéro mineur 2.
-\begin{lstlisting}[style=Bash]
-# ls -l /dev/root
-lrwxrwxrwx    1 root     root             9 Jan  1 00:01 /dev/root -> mmcblk0p2
-# ls -l /dev/mmcblk0p2
-brw-rw----    1 root     root      179,   2 Jan  1 00:00 /dev/mmcblk0p2
-\end{lstlisting}
-
-Ainsi, le noyau connaît "l'adresse" de \textbf{rootfs} grâce au paramètre \textbf{root=/dev/mmcblk0p2} qui lui est passé au démarrage.
-
-\subsection{Montage de usrfs}
-La commande suivante permet de monter le système de fichier \textbf{usrfs} au point de montage \textbf{/mnt/usr}.
-\begin{lstlisting}[style=Bash]
-# mount /dev/mmcblk0p3 /mnt/usr -t ext4
-\end{lstlisting}
-Puis vient le fichier fstab qui sert à moonter cette partition au démarrage du noyau de façon automatique. La ligne suivante doit être ajoutée au fichier afin de permettre ce montage automatique.
-\begin{lstlisting}
-/dev/mmcblk0p3  /mnt/usr        ext4    defaults          0      0
-\end{lstlisting}
-Pour le contenu du fichier \textbf{fstab}, se référer à l'annexe \ref{an:fstab}
-
 %----------------------------------------------------------------------------------------
 %	SECTION 1
 %----------------------------------------------------------------------------------------
 \section{Performances de EXT4}
-
-La page de manuel de la commande mount donne ceci:
+Pour démarrer cet exercice, il est important de prendre connaissance de la page de manuel de la commande mount qui donne ceci:
 \begin{lstlisting}[style=Bash]
 data={journal|ordered|writeback}
               Specifies the journalling mode for file data.  Metadata is always journaled.  To use modes other than ordered on the root filesystem, pass the mode to the kernel  as  boot  parameter,  e.g.
@@ -82,7 +32,7 @@ data={journal|ordered|writeback}
               erwise you risk filesystem corruption in case of power failure.
 \end{lstlisting}
 
-Pour la réalisation de cet exercice, il a été préalablement nécessaire d'installer un cross-compilateur pour Odroid sur la machine hôte utilisée. Ainsi, l'installation a été réalisée à l'aide des commandes suivantes:
+De plus, il a été préalablement nécessaire d'installer un cross-compilateur pour Odroid sur la machine hôte utilisée. Ainsi, l'installation a été réalisée à l'aide des commandes suivantes:
 \begin{lstlisting}[style=Bash]
 cd /usr/local/arm
 wget https://launchpadlibrarian.net/129963014/gcc-linaro-arm-linux-gnueabihf-4.7-2013.01-20130125_linux.tar.xz
@@ -90,14 +40,193 @@ xz -d gcc-linaro-arm-linux-gnueabihf-4.7-2013.01-20130125_linux.tar.xz
 tar -xvf gcc-linaro-arm-linux-gnueabihf-4.7-2013.01-20130125_linux.tar
 ln -s gcc-linaro-arm-linux-gnueabihf-4.7-2013.01-20130125_linux /usr/local/arm/toolchain
 \end{lstlisting}
+Cette installation a permis de compiler le logiciel permettant de réaliser les mesures sur la copie des fichiers. En effet, Linux propose la fonction \textbf{date} qui peut-être utilisée pour récupérer un timestamp temporel mais sur le système embarqué, cette commande n'a pas pu fournir la précision à la milliseconde. Ainsi, il a été nécessaire d'écrire et exécuter un programme le permettant. Le code de ce programme est donné en listing \ref{lst:measure copy time}. Le makefile permettant de le compilé est donné en listing \ref{lst:makefile ext4}. De plus, afin de simplifier les tests de fonctionnement, le code a d'abord été compilé pour la machine hôte.
+\begin{lstlisting}[language=C,caption=Mesure du temps de copie,label=lst:measure copy time]
+#include <ctime>
+#include <iostream>
+#include <fstream>
 
-Pour cet exercice il a fallu au préalable installer et compiler l'application \textbf{tune2fs} à l'aide de buildroot. Le listing \ref{lst:tune2fs} illustre la sélection des packages utilisés.
-\begin{lstlisting}[style=Bash]
+using namespace std;
 
+int main (int argc, char * argv[])
+{
+	if (argc > 0)
+	{
+		ifstream srcFile (argv[1], ios::binary);
+		ofstream dstFile ((string(argv[2]) + string("copy-of-") + string(argv[1])).c_str(), ios::binary);
+		
+		clock_t	begin = clock();
+		dstFile << srcFile.rdbuf();
+		clock_t	end = clock();
+		
+		dstFile.close();
+		srcFile.close();
+		
+		// Returns time in microseconds
+		cout << ((double)(end - begin) / (CLOCKS_PER_SEC / 1000000.));
+	}
+	
+	return 0;
+}
+\end{lstlisting}
+\begin{lstlisting}[label=lst:makefile ext4,caption=makefile permettant la compilation pour la cible]
+CROSS_COMPILE_PATH=/usr/local/arm/toolchain/bin
+ARCH=arm
+CROSS_COMPILE=arm-linux-gnueabihf-
+CC=$(CROSS_COMPILE)g++
+CXXFLAGS=-m$(ARCH) -mthumb-interwork -W -Wall
+
+EXEC=copyFile
+EXT=cpp
+LDFLAGS=
+
+all: $(EXEC)
+
+copyFile: $(EXEC).o 
+	PATH=$(PATH):$(CROSS_COMPILE_PATH)
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+%.o: %.$(EXT)
+	PATH=$(PATH):$(CROSS_COMPILE_PATH)
+	$(CC) -o $@ -c $< $(CXXFLAGS)
+
+clean:
+	rm -rf *.o
+	rm -f $(EXEC)
 \end{lstlisting}
 
+Une fois le fichier binaire compilé, un script permettant la mesure automatique des performances des différentes options sur le EXT4 a été rédigé. Ce script mesure le temps de copie d'un fichier de 50MB et d'un fichier de 50kB avec les options de \textbf{journalisation}, \textbf{data=journal}, \textbf{data=ordered}, \textbf{data=writeback}, \textbf{barrier=0} et \textbf{barrier=1}. Les résultats sont donnés ci-dessous.
+\begin{lstlisting}
+#!/bin/sh
+
+#
+# FUNCTIONS
+#
+backupFstab () {
+	cp /etc/fstab ./fstab
+	cp /etc/fstab /etc/fstab.bck
+}
+restoreFstab () {
+	cp ./fstab /etc/fstab
+}
+createFiles () {
+	echo -n "Creating the file bigFile ... "
+
+	# Create the file
+	ddResult=$(dd if=/dev/urandom of=./bigFile bs=${S_SIZE} count=$((BIG_SIZE / S_SIZE)) 2>&1)
+	echo -e "[ \e[92mOK\e[0m ]"
+	echo $ddResult
+
+	echo -n "Creating the file smallFile ... "
+	
+	# Create the file
+	ddResult=$(dd if=/dev/urandom of=./smallFile bs=${S_SIZE} count=$((SMALL_SIZE / S_SIZE)) 2>&1)
+	echo -e "[ \e[92mOK\e[0m ]"
+	echo $ddResult
+}
+
+journaling () {
+	echo "Un mounting "${TARGET_DIR}
+	umount ${TARGET_DIR}
+	if [[ $1 -eq 0 ]]; then
+		echo "Disabling journal on /dev/mmcblk0p3"
+		tune2fs -O ^has_journal /dev/mmcblk0p3
+	else
+		echo "Enabling journal on /dev/mmcblk0p3"
+		tune2fs -O has_journal /dev/mmcblk0p3
+	fi
+
+	# Mounting partition
+	echo "Re mount "${TARGET_DIR}
+	mount -t ext4 /dev/mmcblk0p3 ${TARGET_DIR}
+}
+
+mountOptions () {
+	# Mount usrfs partition
+	echo -n "changing "$1" option on /dev/mmcblk0p3"
+	umount /dev/mmcblk0p3
+	cp ./fstabFiles/fstab-${1} /etc/fstab
+	mount /dev/mmcblk0p3
+	echo "[ OK ]"
+}
+
+run () {
+	echo "Starting measure ..."
+	./measure ${RESULTS_FILE} ${TARGET_DIR}
+}
+
+removeFiles () {
+	echo "Removing bigFile ... "
+	rm -f bigFile 
+	rm -f smallFile
+}
+
+# Big file size
+BIG_SIZE=50000000
+
+# Small file size
+SMALL_SIZE=50000
+
+# Bloc sector size
+S_SIZE=512
+
+# Results file
+RESULTS_FILE=results.txt
+TARGET_DIR=/mnt/usr
+
+backupFstab
+createFiles
+
+#
+# Disable journaling
+#
+journaling 0
+run
+
+#
+# Enables journaling
+#
+journaling 1
+run
+
+#
+# data journal option
+#
+mountOptions data-journal
+run
+
+mountOptions data-ordered
+run
+
+mountOptions data-writeback
+run
+
+mountOptions barrier-1
+run
+
+mountOptions barrier-0
+run
+
+restoreFstab
+removeFiles
+\end{lstlisting}
+
+\subsection{Mesures}
+Les résultats de ces mesures sont donnés par la figure \ref{fig:measure ext4}.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=14cm]{ext4/measures.png}
+	\caption{\label{fig:measure ext4}Résultats de mesure sur EXT4}
+\end{figure}
+
+De ces résultats il vient que l'option qui ralenti le plus le système de fichier est la journalisation. Toute les autres options restent très proches les unes des autres en terme de performance. Dans le graphique \ref{fig:measure ext4}, une échelle logarithmique a été utilisée pour faciliter la lecture des données. De plus, il n'a pas été jugé pertinent de fournir un graphe détaillé des différents temps car ceux-ci varient de $\pm 100\ ms$ et reste sous la barre des 970 ms d'une option à l'autre pour un fichier de 50 MB.
+
+La journalisation des données prend plus de temps car le système garde une trace de ce qui a été modifié.
+
+Pour cet exercice il a fallu au préalable installer et compiler l'application \textbf{tune2fs} à l'aide de buildroot.
+
 \section{SquashFS}
-Le système de fichier Squash est un système de type lecture-seule et compressé. Il supporte des tailles de blocs jusqu'à 1Mo afin d'optimiser la compression des fichiers. Pour pouvoir l'utiliser sous Linux, il est au préalable nécessaire de modifier la compilation du kernel afin de le lui faire supporter. Ainsi, l'exécution et la configuration sont données:
+Le système de fichier Squash est un système de type lecture-seule et supportant la compression. Il supporte des tailles de blocs jusqu'à 1Mo afin d'optimiser la compression des fichiers. Pour pouvoir l'utiliser sous Linux, il est au préalable nécessaire de modifier la compilation du kernel afin de le lui faire supporter. Ainsi, l'exécution et la configuration sont données:
 
 \begin{lstlisting}
 make linux-menuconfig
@@ -106,7 +235,7 @@ make linux-menuconfig
 <*>   SquashFS 4.0 - Squashed file system support
 \end{lstlisting}
 
-Afin de réaliser correctement cet exercice, quatre images squashFS ont été créées à l'aide des fichiers et dossiers générés par buildroot lors de la compilation du Kernel. Le script permettant la création des images est donné en annexe \ref{an:script squashfs}. Ainsi, les images obtenues ainsi que leur taille respectives sont données dans le tableau ci-dessous:
+Afin de réaliser correctement cet exercice, quatre images squashFS ont été créées à l'aide des fichiers et dossiers générés par buildroot lors de la compilation du Kernel. Le script permettant la création des images est donné ci-dessous \ref{lst:squashfs}. Les images obtenues ainsi que leur taille respectives sont données dans le tableau ci-dessous:
 \begin{table}[H]
 	\centering
 	\begin{tabular}{lrp{10cm}}
@@ -119,12 +248,47 @@ Afin de réaliser correctement cet exercice, quatre images squashFS ont été cr
 	\caption{\label{table:squashfs size}Résumé de la taille de chaque image squashfs}
 \end{table}
 
+\begin{lstlisting}[caption=Création des images squash fs,label=lst:squashfs]
+#!/bin/bash
+
+TARGET_DIR=/media/embedhfw/usrfs
+BUILDROOT_ROOTFS=~/ses/buildroot/output/images
+
+if [[ ! -d "$TARGET_DIR" ]];
+then
+	echo $TARGET_DIR" is not mounted, please mount it first."
+	echo "Quit"
+	exit
+fi
+
+# File system is mounted
+
+mkdir tmpfs
+echo "mounting rootfs.ext4 from buildroot/output/images"
+mount -t ext4 ${BUILDROOT_ROOTFS}/rootfs.ext4 ./tmpfs
+
+echo "Copy specified folders to $TARGET_DIR"
+cp -R tmpfs/{bin,lib,lib32,libexec,sbin,share} $TARGET_DIR
+
+echo "Creating squash fs file with default parameters"
+mksquashfs tmpfs squashfs.default
+
+echo "Creating squash fs file without inode compression"
+mksquashfs tmpfs squashfs.noI -noI
+
+echo "Creating squash fs file without data compression"
+mksquashfs tmpfs squashfs.noD -noD
+
+echo "Creating squash fs file without fragment compression"
+mksquashfs tmpfs squashfs.noF -noF
+
+umount ./tmpfs
+\end{lstlisting}
+
+Les images du système de fichier \textbf{squash} créées, celle par défaut (squashsf.default) a été montée dans \textbf{/mnt/sqfs} afin de réaliser quelque test d'écriture.
 \begin{lstlisting}[style=Bash]
-# cd /mnt/usr/
-# ls
-lost+found        squashfs.noD      squashfs.noI
-squashfs.default  squashfs.noF
-# mkdir ../sqfs
+# pwd
+/mnt/sqfs
 # mount squashfs.default /mnt/sqfs -t squashfs -o loop
 # mount
 rootfs on / type rootfs (rw)
@@ -163,128 +327,22 @@ drwxrwxr-x    6 root     root            63 Apr 14  2015 var
 mkdir: can't create directory '/mnt/sqfs/test': Read-only file system
 \end{lstlisting}
 
-\begin{lstlisting}[style=Bash,caption=squashfs.noD]
+Le listing ci-dessus illustre clairement qu'il n'a pas été possible de créer un dossier dans l'arborescence du système de fichier. Le même test a été réalisé pour chaque cas. Mêmes résultats, donnés par le listing \ref{lst:squash nod}
+
+\begin{lstlisting}[style=Bash,caption=squashfs.noD,label=squash nod]
 # mount squashfs.noD /mnt/sqfs -t squashfs -o loop
-# mount
-rootfs on / type rootfs (rw)
-/dev/root on / type ext4 (rw,relatime,data=ordered)
-devtmpfs on /dev type devtmpfs (rw,relatime,size=765120k,nr_inodes=120929,mode=755)
-proc on /proc type proc (rw,relatime)
-devpts on /dev/pts type devpts (rw,relatime,gid=5,mode=620)
-tmpfs on /dev/shm type tmpfs (rw,relatime,mode=777)
-tmpfs on /tmp type tmpfs (rw,relatime)
-sysfs on /sys type sysfs (rw,relatime)
-/dev/mmcblk0p3 on /mnt/usr type ext4 (rw,relatime,data=ordered)
-/dev/loop0 on /mnt/sqfs type squashfs (ro,relatime)
-# ls -la /mnt/sqfs
-total 1
-drwxr-xr-x   18 root     root           256 Apr 30  2015 .
-drwxr-xr-x    4 root     root          1024 Jan  1 00:02 ..
-drwxrwxr-x    2 root     root           993 Apr 30  2015 bin
-drwxr-xr-x    3 root     root            52 Apr 14  2015 dev
-drwxr-xr-x    7 root     root           439 Apr 30  2015 etc
-drwxrwxr-x    3 root     root            26 Mar  5  2015 home
-drwxrwxr-x    5 root     root           953 Apr 30  2015 lib
-lrwxrwxrwx    1 root     root             3 Apr 14  2015 lib32 -> lib
-lrwxrwxrwx    1 root     root            11 Apr 14  2015 linuxrc -> bin/busybox
-drwx------    2 root     root             3 Apr 30  2015 lost+found
-drwxrwxr-x    2 root     root             3 Mar  5  2015 media
-drwxrwxr-x    2 root     root             3 Feb  3  2015 mnt
-drwxrwxr-x    2 root     root             3 Feb  3  2015 opt
-drwxrwxr-x    2 root     root             3 Feb  3  2015 proc
-drwx------    2 root     root            77 Mar  5  2015 root
-drwxrwxr-x    2 root     root           744 Apr 30  2015 sbin
-drwxrwxr-x    2 root     root             3 Mar  5  2015 sys
-drwxrwxrwt    2 root     root             3 Feb  3  2015 tmp
-drwxrwxr-x    7 root     root           102 Apr 30  2015 usr
-drwxrwxr-x    6 root     root            63 Apr 14  2015 var
 # mkdir /mnt/sqfs/test
 mkdir: can't create directory '/mnt/sqfs/test': Read-only file system
-\end{lstlisting}
-
-\begin{lstlisting}[style=Bash,caption=squashfs.noF]
 # mount squashfs.noF /mnt/sqfs -t squashfs -o loop
-# mount
-rootfs on / type rootfs (rw)
-/dev/root on / type ext4 (rw,relatime,data=ordered)
-devtmpfs on /dev type devtmpfs (rw,relatime,size=765120k,nr_inodes=120929,mode=755)
-proc on /proc type proc (rw,relatime)
-devpts on /dev/pts type devpts (rw,relatime,gid=5,mode=620)
-tmpfs on /dev/shm type tmpfs (rw,relatime,mode=777)
-tmpfs on /tmp type tmpfs (rw,relatime)
-sysfs on /sys type sysfs (rw,relatime)
-/dev/mmcblk0p3 on /mnt/usr type ext4 (rw,relatime,data=ordered)
-/dev/loop0 on /mnt/sqfs type squashfs (ro,relatime)
-# ls -la /mnt/sqfs
-total 1
-drwxr-xr-x   18 root     root           256 Apr 30  2015 .
-drwxr-xr-x    4 root     root          1024 Jan  1 00:02 ..
-drwxrwxr-x    2 root     root           993 Apr 30  2015 bin
-drwxr-xr-x    3 root     root            52 Apr 14  2015 dev
-drwxr-xr-x    7 root     root           439 Apr 30  2015 etc
-drwxrwxr-x    3 root     root            26 Mar  5  2015 home
-drwxrwxr-x    5 root     root           953 Apr 30  2015 lib
-lrwxrwxrwx    1 root     root             3 Apr 14  2015 lib32 -> lib
-lrwxrwxrwx    1 root     root            11 Apr 14  2015 linuxrc -> bin/busybox
-drwx------    2 root     root             3 Apr 30  2015 lost+found
-drwxrwxr-x    2 root     root             3 Mar  5  2015 media
-drwxrwxr-x    2 root     root             3 Feb  3  2015 mnt
-drwxrwxr-x    2 root     root             3 Feb  3  2015 opt
-drwxrwxr-x    2 root     root             3 Feb  3  2015 proc
-drwx------    2 root     root            77 Mar  5  2015 root
-drwxrwxr-x    2 root     root           744 Apr 30  2015 sbin
-drwxrwxr-x    2 root     root             3 Mar  5  2015 sys
-drwxrwxrwt    2 root     root             3 Feb  3  2015 tmp
-drwxrwxr-x    7 root     root           102 Apr 30  2015 usr
-drwxrwxr-x    6 root     root            63 Apr 14  2015 var
 # mkdir /mnt/sqfs/test
 mkdir: can't create directory '/mnt/sqfs/test': Read-only file system
-\end{lstlisting}
-
-\begin{lstlisting}[style=Bash,caption=squashfs.noI]
 # mount squashfs.noI /mnt/sqfs -t squashfs -o loop
-# mount
-rootfs on / type rootfs (rw)
-/dev/root on / type ext4 (rw,relatime,data=ordered)
-devtmpfs on /dev type devtmpfs (rw,relatime,size=765120k,nr_inodes=120929,mode=755)
-proc on /proc type proc (rw,relatime)
-devpts on /dev/pts type devpts (rw,relatime,gid=5,mode=620)
-tmpfs on /dev/shm type tmpfs (rw,relatime,mode=777)
-tmpfs on /tmp type tmpfs (rw,relatime)
-sysfs on /sys type sysfs (rw,relatime)
-/dev/mmcblk0p3 on /mnt/usr type ext4 (rw,relatime,data=ordered)
-/dev/loop0 on /mnt/sqfs type squashfs (ro,relatime)
-# ls -la /mnt/sqfs
-total 1
-drwxr-xr-x   18 root     root           256 Apr 30  2015 .
-drwxr-xr-x    4 root     root          1024 Jan  1 00:02 ..
-drwxrwxr-x    2 root     root           993 Apr 30  2015 bin
-drwxr-xr-x    3 root     root            52 Apr 14  2015 dev
-drwxr-xr-x    7 root     root           439 Apr 30  2015 etc
-drwxrwxr-x    3 root     root            26 Mar  5  2015 home
-drwxrwxr-x    5 root     root           953 Apr 30  2015 lib
-lrwxrwxrwx    1 root     root             3 Apr 14  2015 lib32 -> lib
-lrwxrwxrwx    1 root     root            11 Apr 14  2015 linuxrc -> bin/busybox
-drwx------    2 root     root             3 Apr 30  2015 lost+found
-drwxrwxr-x    2 root     root             3 Mar  5  2015 media
-drwxrwxr-x    2 root     root             3 Feb  3  2015 mnt
-drwxrwxr-x    2 root     root             3 Feb  3  2015 opt
-drwxrwxr-x    2 root     root             3 Feb  3  2015 proc
-drwx------    2 root     root            77 Mar  5  2015 root
-drwxrwxr-x    2 root     root           744 Apr 30  2015 sbin
-drwxrwxr-x    2 root     root             3 Mar  5  2015 sys
-drwxrwxrwt    2 root     root             3 Feb  3  2015 tmp
-drwxrwxr-x    7 root     root           102 Apr 30  2015 usr
-drwxrwxr-x    6 root     root            63 Apr 14  2015 var
 # mkdir /mnt/sqfs/test
 mkdir: can't create directory '/mnt/sqfs/test': Read-only file system
 \end{lstlisting}
 
 \section{Partition squashfs}
-Pour réaliser cet exercice, le script de l'exercice 3, laboratoire \#1 (voir annexe \ref{an:script squashfs}) a été exécuté lorsque la carte \usd se trouvait dans le lecteur. Le système cible à ensuite pu être démarré sachant que les variables d'environnement uboot ont été modifiées à l'aide des commandes suivantes.
-
-
-Après avoir modifié le contenu du fichier /etc/fstab tel que donné ci-dessous
+Pour réaliser cet exercice, un script de création de la carte SD a été exécuté lorsque la carte \usd se trouvait dans le lecteur. Le système cible à ensuite pu être démarrée. Après avoir modifié le contenu du fichier /etc/fstab tel que donné ci-dessous
 \begin{lstlisting}
 # /etc/fstab: static file system information.
 #
@@ -306,7 +364,7 @@ les partitions ont pu être montées après création de leur point de montage s
 \end{lstlisting}
 
 Ainsi, le montage du système de fichier \textbf{squashfs} donne les résultats suivants :
-\begin{lstlisting}
+\begin{lstlisting}[style=Bash]
 # mount -a
 [  110.733993] [c7] EXT4-fs (mmcblk0p3): mounted filesystem with ordered data mode. Opts: (null)
 Jan  1 00:52:27 odroidxu3 user.info kernel: [  110.733993] [c7] EXT4-fs (mmcblk0p3): mounted filesystem with ordered data mode. Opts: (null)
@@ -348,3 +406,4 @@ lors de la commande
 \begin{lstlisting}[style=Bash]
 :wq
 \end{lstlisting}
+exécutée dans \textbf{vi}. Le système de fichier squashfs est effectivement en lecture seule et ne permet donc pas l'écriture ou la création de nouveaux fichiers.
