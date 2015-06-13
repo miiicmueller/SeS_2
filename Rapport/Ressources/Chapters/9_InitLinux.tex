@@ -1,20 +1,74 @@
 \chapter{init Linux}
 \section{Script de démarrage}
-\subsection{Services}
 
 Au démarrage, le système exécute les scripts situés dans \textbf{/etc/init.d/} :
 
 \begin{center} 
 \hspace{15cm}
-\includegraphics[width=16cm]{init_d.png}
+\includegraphics[width=10cm]{init_d.png}
 \end{center}
 \vspace{0.5cm}
 
+\subsection{S01logging}
+
+Ce script va exécuter les programmes suivants :
+
 \begin{itemize}
-	\item sshd
-	\item httpd
-	\item ...
+	\item /sbin/syslogd
+	\item /sbin/klogd
 \end{itemize}
+
+Version de \textbf{syslogd} : BusyBox v1.22.1 (2015-04-16 16:07:35 CEST) multi-call binary.\\
+Version de \textbf{klogd} :BusyBox v1.22.1 (2015-04-16 16:07:35 CEST) multi-call binary.
+
+Je n'ai trouvé aucune information sur des vulnérabilités possibles à propos de BusyBox v1.22.1 (des infos existent pour les versions antérieures de BusyBox, mais plus aucune à partir de la version 1.21).
+
+\subsection{S10mdev}
+
+Ce script va exécuter le programme suivant :
+
+\begin{itemize}
+	\item /sbin/mdev
+\end{itemize}
+
+Version de \textbf{mdev} : BusyBox v1.22.1 (2015-04-16 16:07:35 CEST) multi-call binary.
+
+Je n'ai trouvé aucune information sur des vulnérabilités possibles à propos de BusyBox v1.22.1.
+
+\subsection{S20urandom}
+
+Ce script ne lance aucun exécutable. Cependant il va simplement sauvegarder la \textbf{random seed} lors de l'arrêt du système et la recharger à son démarrage.
+
+Une version du script est donnée : \textbf{Version:	(\#)urandom  1.33  22-Jun-1998  miquels@cistron.nl}
+
+\subsection{S40network}
+
+Ce script va exécuter les programmes suivants :
+
+\begin{itemize}
+	\item /sbin/ifup (au démarrage du système)
+	\item /sbin/ifdown (à l'arrêt du système)
+\end{itemize}
+
+Version de \textbf{ifup} : BusyBox v1.22.1 (2015-04-16 16:07:35 CEST) multi-call binary.
+
+Je n'ai trouvé aucune information sur des vulnérabilités possibles à propos de BusyBox v1.22.1.
+
+\subsection{S50sshd}
+
+Ce script va exécuter le programme suivant :
+
+\begin{itemize}
+	\item /usr/sbin/sshd
+\end{itemize}
+
+Version de \textbf{sshd} : OpenSSH\_6.7p1, OpenSSL 1.0.1j 15 Oct 2014
+
+Ces versions de OpenSSH et OpenSSL sont listées pour un certain nombre de vulnérabilités sur les sites indiqués dans la donnée. En revanche je n'ai pas trouvé d'informations pour éviter ces problèmes.
+
+\subsection{S90fan\_low\_speed}
+
+Ce script ne lance aucun exécutable. Il va écrire dans des fichiers du système qui permettent de contrôler le ventilateur.
 
 \section{Démons}
 La liste des démons qui doivent être démarrés se trouve dans le fichier \textbf{/etc/inittab} qui décrit également quand et comment ils doivent être démarrés. Par exemple au démarrage du système, à l'arrêt du système, ...\\
