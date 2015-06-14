@@ -40,7 +40,7 @@ xz -d gcc-linaro-arm-linux-gnueabihf-4.7-2013.01-20130125_linux.tar.xz
 tar -xvf gcc-linaro-arm-linux-gnueabihf-4.7-2013.01-20130125_linux.tar
 ln -s gcc-linaro-arm-linux-gnueabihf-4.7-2013.01-20130125_linux /usr/local/arm/toolchain
 \end{lstlisting}
-Cette installation a permis de compiler le logiciel permettant de réaliser les mesures sur la copie des fichiers. En effet, Linux propose la fonction \textbf{date} qui peut-être utilisée pour récupérer un timestamp temporel mais sur le système embarqué, cette commande n'a pas pu fournir la précision à la milliseconde. Ainsi, il a été nécessaire d'écrire et exécuter un programme le permettant. Le code de ce programme est donné en listing \ref{lst:measure copy time}. Le makefile permettant de le compilé est donné en listing \ref{lst:makefile ext4}. De plus, afin de simplifier les tests de fonctionnement, le code a d'abord été compilé pour la machine hôte.
+Cette installation a permis de compiler le logiciel permettant de réaliser les mesures sur la copie des fichiers. En effet, Linux propose la fonction \textbf{date} qui peut-être utilisée pour récupérer un timestamp temporel mais sur le système embarqué, cette commande n'a pas pu fournir la précision à la milliseconde. Ainsi, il a été nécessaire d'écrire et exécuter un programme le permettant. Le code de ce programme est donné en listing \ref{lst:measure copy time}. Le makefile permettant de le compiler est donné en listing \ref{lst:makefile ext4}. De plus, afin de simplifier les tests de fonctionnement, le code a d'abord été compilé pour la machine hôte.
 \begin{lstlisting}[language=C,caption=Mesure du temps de copie,label=lst:measure copy time]
 #include <ctime>
 #include <iostream>
@@ -212,14 +212,14 @@ removeFiles
 \end{lstlisting}
 
 \subsection{Mesures}
-Les résultats de ces mesures sont donnés par la figure \ref{fig:measure ext4}.
+Les résultats de ces mesures sont données par la figure \ref{fig:measure ext4}.
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=14cm]{ext4/measures.png}
 	\caption{\label{fig:measure ext4}Résultats de mesure sur EXT4}
 \end{figure}
 
-De ces résultats il vient que l'option qui ralenti le plus le système de fichier est la journalisation. Toute les autres options restent très proches les unes des autres en terme de performance. Dans le graphique \ref{fig:measure ext4}, une échelle logarithmique a été utilisée pour faciliter la lecture des données. De plus, il n'a pas été jugé pertinent de fournir un graphe détaillé des différents temps car ceux-ci varient de $\pm 100\ ms$ et reste sous la barre des 970 ms d'une option à l'autre pour un fichier de 50 MB.
+De ces résultats il vient que l'option qui ralenti le plus le système de fichier est la journalisation. Toute les autres options restent très proches les unes des autres en terme de performance. Dans le graphique \ref{fig:measure ext4}, une échelle logarithmique a été utilisée pour faciliter la lecture des données. De plus, il n'a pas été jugé pertinent de fournir un graphe détaillé des différents temps car ceux-ci varient de $\pm 100\ ms$ et restent sous la barre des 970 ms d'une option à l'autre pour un fichier de 50 MB.
 
 La journalisation des données prend plus de temps car le système garde une trace de ce qui a été modifié.
 
@@ -285,7 +285,7 @@ mksquashfs tmpfs squashfs.noF -noF
 umount ./tmpfs
 \end{lstlisting}
 
-Les images du système de fichier \textbf{squash} créées, celle par défaut (squashsf.default) a été montée dans \textbf{/mnt/sqfs} afin de réaliser quelque test d'écriture.
+Les images du système de fichier \textbf{squash} créées, celle par défaut (squashsf.default) a été montée dans \textbf{/mnt/sqfs} afin de réaliser quelques tests d'écriture.
 \begin{lstlisting}[style=Bash]
 # pwd
 /mnt/sqfs
@@ -342,7 +342,7 @@ mkdir: can't create directory '/mnt/sqfs/test': Read-only file system
 \end{lstlisting}
 
 \section{Partition squashfs}
-Pour réaliser cet exercice, un script de création de la carte SD a été exécuté lorsque la carte \usd se trouvait dans le lecteur. Le système cible à ensuite pu être démarrée. Après avoir modifié le contenu du fichier /etc/fstab tel que donné ci-dessous
+Pour réaliser cet exercice, un script de création de la carte SD a été exécuté lorsque la carte \usd se trouvait dans le lecteur. Le système cible à ensuite pu être démarré. Après avoir modifié le contenu du fichier /etc/fstab tel que donné ci-dessous
 \begin{lstlisting}
 # /etc/fstab: static file system information.
 #

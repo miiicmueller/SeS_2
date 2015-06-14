@@ -41,7 +41,7 @@ lrwxrwxrwx    1 root     root             9 Jan  1 00:01 /dev/root -> mmcblk0p2
 \end{lstlisting}
 
 \section{What are the major and minor number for the "/dev/root" node file}
-Cette dernière commande affiche une information de plus à savoir les numéro majeur et mineur du fichier en question. Ici, \textbf{/dev/root} ne possède pas de numéro majeur (major number) ni mineur car il s'agit d'un lien. Ces numéros identifient les pilotes sous Linux. De plus, les fichiers spéciaux identifiant un pilote de périphérique de type caractère présente la lettre c devant la ligne correspondante. Ici, \textbf{/dev/root} est un lien symbolique vers \textbf{/dev/mmcblk0p2} qui lui-même est un pilote de type \textbf{block}. Ceci signifie que le noyau écrit les données sur celui-ci par multiple de la taille du bloc. \textbf{/dev/mmcblk0p2} possède le numéro majeur 179 et le numéro mineur 2.
+Cette dernière commande affiche une information de plus à savoir les numéro majeur et mineur du fichier en question. Ici, \textbf{/dev/root} ne possède pas de numéro majeur (major number) ni mineur car il s'agit d'un lien. Ces numéros identifient les pilotes sous Linux. De plus, les fichiers spéciaux identifiant un pilote de périphérique de type caractère présente la lettre c devant la ligne correspondante. Ici, \textbf{/dev/root} est un lien symbolique vers \textbf{/dev/mmcblk0p2} qui lui-même est un pilote de type \textbf{block}. Ceci signifie que le noyau écrit les données sur celui-ci par multiples de la taille du bloc. \textbf{/dev/mmcblk0p2} possède le numéro majeur 179 et le numéro mineur 2.
 \begin{lstlisting}[style=Bash]
 # ls -l /dev/root
 lrwxrwxrwx    1 root     root             9 Jan  1 00:01 /dev/root -> mmcblk0p2
